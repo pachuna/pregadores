@@ -1,0 +1,10 @@
+{
+  "name": "Pregadores",
+  "short_name": "Pregadores",
+  "description": "Gerenciamento de revisitas com mapa interativo",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#4a6da7",
+  "icons": []
+}

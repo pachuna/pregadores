@@ -1,0 +1,14 @@
+.next/
+node_modules/
+.env.local
+.env
+.env.*
+!.env.example
+
+*.db
+*.sqlite
+*.sqlite3
+
+*.tsbuildinfo
+
+/src/generated/prisma

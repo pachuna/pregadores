@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  revisits     Revisit[]
+}
+
+model Revisit {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  address   String
+  latitude  Float
+  longitude Float
+  notes     String?
+  visitDate DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([latitude, longitude])
+}
