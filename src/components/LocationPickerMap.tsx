@@ -17,6 +17,7 @@ const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "";
 
 export default function LocationPickerMap({ lat, lng, onChange }: Props) {
   const [mapsLoadError, setMapsLoadError] = useState(false);
+  const centerKey = `${lat.toFixed(6)}-${lng.toFixed(6)}`;
 
   if (!MAPS_KEY || mapsLoadError) {
     return (
@@ -38,6 +39,7 @@ export default function LocationPickerMap({ lat, lng, onChange }: Props) {
       }}
     >
       <Map
+        key={centerKey}
         defaultZoom={15}
         defaultCenter={{ lat, lng }}
         className="w-full h-full rounded-lg"

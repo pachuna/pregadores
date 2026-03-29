@@ -20,6 +20,7 @@ const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "";
 export default function RevisitsMap({ revisits, center, userPos }: Props) {
   const [selected, setSelected] = useState<Revisit | null>(null);
   const [mapsLoadError, setMapsLoadError] = useState(false);
+  const centerKey = `${center.lat.toFixed(6)}-${center.lng.toFixed(6)}`;
 
   // If there is no API key or Google Maps failed to load, show fallback list view
   if (!MAPS_KEY || mapsLoadError) {
@@ -41,6 +42,7 @@ export default function RevisitsMap({ revisits, center, userPos }: Props) {
       }}
     >
       <Map
+        key={centerKey}
         defaultZoom={13}
         defaultCenter={center}
         className="w-full h-full"
