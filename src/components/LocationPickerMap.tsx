@@ -3,7 +3,7 @@
 import {
   APIProvider,
   Map,
-  AdvancedMarker,
+  Marker,
 } from "@vis.gl/react-google-maps";
 import { useState } from "react";
 
@@ -40,7 +40,6 @@ export default function LocationPickerMap({ lat, lng, onChange }: Props) {
       <Map
         defaultZoom={15}
         defaultCenter={{ lat, lng }}
-        mapId="pregadores-picker"
         className="w-full h-full rounded-lg"
         gestureHandling="greedy"
         onClick={(e) => {
@@ -48,7 +47,7 @@ export default function LocationPickerMap({ lat, lng, onChange }: Props) {
           if (pos) onChange(pos.lat, pos.lng);
         }}
       >
-        <AdvancedMarker position={{ lat, lng }} title="Local selecionado" />
+        <Marker position={{ lat, lng }} title="Local selecionado" />
       </Map>
     </APIProvider>
   );

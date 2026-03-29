@@ -3,7 +3,7 @@
 import {
   APIProvider,
   Map,
-  AdvancedMarker,
+  Marker,
   InfoWindow,
 } from "@vis.gl/react-google-maps";
 import { useState } from "react";
@@ -43,20 +43,17 @@ export default function RevisitsMap({ revisits, center, userPos }: Props) {
       <Map
         defaultZoom={13}
         defaultCenter={center}
-        mapId="pregadores-map"
         className="w-full h-full"
         gestureHandling="greedy"
       >
         {/* User position marker */}
         {userPos && (
-          <AdvancedMarker position={userPos} title="Você está aqui">
-            <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg" />
-          </AdvancedMarker>
+          <Marker position={userPos} title="Você está aqui" />
         )}
 
         {/* Revisit markers */}
         {revisits.map((r) => (
-          <AdvancedMarker
+          <Marker
             key={r.id}
             position={{ lat: r.latitude, lng: r.longitude }}
             title={r.name}
