@@ -1,9 +1,11 @@
+console.log("Arquivo de rota de login carregado");
 import { NextRequest, NextResponse } from "next/server";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { generateTokenPair } from "@/lib/jwt";
 
 export async function POST(request: NextRequest) {
+  console.log("Login endpoint chamado");
   try {
     const body = await request.json();
     const { email, password } = body;
@@ -32,8 +34,10 @@ export async function POST(request: NextRequest) {
     }
 
     const tokens = await generateTokenPair(user.id);
+    console.log("Login executado com sucesso", tokens);
     return NextResponse.json(tokens);
-  } catch {
+  } catch (e) {
+    console.error("Erro no login:", e);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
