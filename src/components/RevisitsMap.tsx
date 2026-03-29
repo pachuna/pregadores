@@ -43,7 +43,7 @@ export default function RevisitsMap({ revisits, center, userPos }: Props) {
     >
       <Map
         key={centerKey}
-        defaultZoom={13}
+        defaultZoom={15}
         defaultCenter={center}
         className="w-full h-full"
         gestureHandling="greedy"
