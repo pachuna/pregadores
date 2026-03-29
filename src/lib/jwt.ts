@@ -1,10 +1,24 @@
 import { SignJWT, jwtVerify } from "jose";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "fallback-dev-secret"
-);
+function getSecretFromEnv(name: "JWT_SECRET" | "JWT_REFRESH_SECRET"): string {
+  const value = process.env[name]?.trim();
+
+  if (value) {
+    return value;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(`${name} não definido em ambiente de produção`);
+  }
+
+  return name === "JWT_SECRET"
+    ? "fallback-dev-secret"
+    : "fallback-refresh-secret";
+}
+
+const JWT_SECRET = new TextEncoder().encode(getSecretFromEnv("JWT_SECRET"));
 const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET || "fallback-refresh-secret"
+  getSecretFromEnv("JWT_REFRESH_SECRET")
 );
 
 const ACCESS_TOKEN_EXPIRY = "15m";
