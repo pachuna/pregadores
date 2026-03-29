@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { revisitsApi } from "@/lib/api";
 import AuthGuard from "@/components/AuthGuard";
@@ -50,14 +50,26 @@ function NewRevisitContent() {
   };
 
   // Try to get user location on mount
-  useState(() => {
-    if (typeof navigator !== "undefined" && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) => {
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
         setLat(pos.coords.latitude);
         setLng(pos.coords.longitude);
-      });
-    }
-  });
+      },
+      () => {
+        // Keep default Sao Paulo coordinates when location is denied/unavailable.
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      },
+    );
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">

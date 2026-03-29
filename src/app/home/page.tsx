@@ -43,7 +43,14 @@ function HomeContent() {
         (pos) =>
           setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         () => setUserPos({ lat: -23.5505, lng: -46.6333 }), // fallback SP
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0,
+        },
       );
+    } else {
+      setUserPos({ lat: -23.5505, lng: -46.6333 });
     }
     loadRevisits();
   }, [loadRevisits]);
