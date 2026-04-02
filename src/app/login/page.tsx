@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 
@@ -13,10 +13,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const setTokens = useAuthStore((s) => s.setTokens);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const reason = searchParams.get("reason");
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const reason = new URLSearchParams(window.location.search).get("reason");
     if (reason === "session-expired") {
       setError("Sua sessão expirou. Faça login novamente.");
       router.replace("/login");
@@ -26,7 +29,7 @@ export default function LoginPage() {
       setError("Faça login para continuar.");
       router.replace("/login");
     }
-  }, [router, searchParams]);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
