@@ -95,6 +95,8 @@ export const authApi = {
     api.post<AuthTokens>("/api/auth/login", { email, password }),
   register: (email: string, password: string) =>
     api.post<AuthTokens>("/api/auth/register", { email, password }),
+  google: (idToken: string) =>
+    api.post<AuthTokens>("/api/auth/google", { idToken }),
   refresh: (refreshToken: string) =>
     api.post<AuthTokens>("/api/auth/refresh", { refreshToken }),
 };

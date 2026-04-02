@@ -5,11 +5,39 @@ import { useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: {
+            client_id: string;
+            callback: (response: { credential?: string }) => void;
+          }) => void;
+          renderButton: (
+            element: HTMLElement,
+            options: {
+              theme?: "outline" | "filled_blue" | "filled_black";
+              size?: "large" | "medium" | "small";
+              shape?: "pill" | "rectangular" | "circle" | "square";
+              text?: "signin_with" | "signup_with" | "continue_with" | "signin";
+              width?: number;
+            },
+          ) => void;
+        };
+      };
+    };
+  }
+}
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() || "";
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isRegister, setIsRegister] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const setTokens = useAuthStore((s) => s.setTokens);
   const router = useRouter();
@@ -30,6 +58,80 @@ export default function LoginPage() {
       router.replace("/login");
     }
   }, [router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !GOOGLE_CLIENT_ID) {
+      return;
+    }
+
+    let mounted = true;
+    const element = document.getElementById("google-signin-container");
+    if (!element) {
+      return;
+    }
+
+    const initGoogle = () => {
+      if (!mounted || !window.google) {
+        return;
+      }
+
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: async (response) => {
+          const credential = response.credential;
+          if (!credential) {
+            setError("Falha ao autenticar com Google.");
+            return;
+          }
+
+          setError("");
+          setGoogleLoading(true);
+          try {
+            const { data } = await authApi.google(credential);
+            setTokens(data.accessToken, data.refreshToken);
+            router.replace("/home");
+          } catch {
+            setError("Não foi possível entrar com Google.");
+          } finally {
+            setGoogleLoading(false);
+          }
+        },
+      });
+
+      element.innerHTML = "";
+      window.google.accounts.id.renderButton(element, {
+        theme: "outline",
+        size: "large",
+        shape: "pill",
+        text: isRegister ? "signup_with" : "signin_with",
+        width: Math.min(Math.floor(element.clientWidth), 420),
+      });
+    };
+
+    if (window.google) {
+      initGoogle();
+      return () => {
+        mounted = false;
+      };
+    }
+
+    const existingScript = document.getElementById("google-identity-script");
+    if (!existingScript) {
+      const script = document.createElement("script");
+      script.id = "google-identity-script";
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = initGoogle;
+      document.head.appendChild(script);
+    } else {
+      (existingScript as HTMLScriptElement).onload = initGoogle;
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [isRegister, router, setTokens]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,6 +236,27 @@ export default function LoginPage() {
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? "Carregando..." : isRegister ? "Criar Conta" : "Entrar"}
           </button>
+
+          <div className="flex items-center gap-3 pt-1">
+            <div className="h-px bg-[var(--color-border)] flex-1" />
+            <span className="text-xs text-[var(--color-text-light)]">ou</span>
+            <div className="h-px bg-[var(--color-border)] flex-1" />
+          </div>
+
+          {GOOGLE_CLIENT_ID ? (
+            <div>
+              <div id="google-signin-container" className="w-full min-h-11" />
+              {googleLoading && (
+                <p className="text-xs text-center text-[var(--color-text-light)] mt-2">
+                  Autenticando com Google...
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-center text-[var(--color-text-light)]">
+              Configure NEXT_PUBLIC_GOOGLE_CLIENT_ID para habilitar login com Google.
+            </p>
+          )}
         </form>
       </div>
     </div>

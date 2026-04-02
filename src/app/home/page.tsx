@@ -7,6 +7,11 @@ import { useAuthStore } from "@/store/authStore";
 import AuthGuard from "@/components/AuthGuard";
 import RevisitsMap from "@/components/RevisitsMap";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import {
+  getLastKnownLocation,
+  LOCATION_CACHE_MAX_AGE_MS,
+  resolveUserLocation,
+} from "@/lib/location";
 import type { Revisit } from "@/lib/types";
 
 type SheetLevel = "peek" | "mid" | "full";
@@ -93,22 +98,34 @@ function HomeContent() {
   }, []);
 
   useEffect(() => {
-    // Get user location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) =>
-          setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => setUserPos({ lat: -23.5505, lng: -46.6333 }), // fallback SP
-        {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0,
-        },
-      );
-    } else {
-      setUserPos({ lat: -23.5505, lng: -46.6333 });
+    let active = true;
+
+    const cached = getLastKnownLocation();
+    if (cached) {
+      setUserPos(cached);
     }
+
+    resolveUserLocation({
+      maxAgeMs: LOCATION_CACHE_MAX_AGE_MS,
+      timeoutMs: 9000,
+      enableHighAccuracy: false,
+    }).then((pos) => {
+      if (!active) {
+        return;
+      }
+
+      if (pos) {
+        setUserPos(pos);
+      } else if (!cached) {
+        setUserPos({ lat: -23.5505, lng: -46.6333 });
+      }
+    });
+
     loadRevisits();
+
+    return () => {
+      active = false;
+    };
   }, [loadRevisits]);
 
   const handleLogout = () => {

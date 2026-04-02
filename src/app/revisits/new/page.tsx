@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { revisitsApi } from "@/lib/api";
 import AuthGuard from "@/components/AuthGuard";
 import LocationPickerMap from "@/components/LocationPickerMap";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import { geocodeAddress, reverseGeocodeCoordinates } from "@/lib/geocoding";
+import {
+  getLastKnownLocation,
+  LOCATION_CACHE_MAX_AGE_MS,
+  resolveUserLocation,
+} from "@/lib/location";
 
 export default function NewRevisitPage() {
   return (
@@ -24,6 +30,8 @@ function NewRevisitContent() {
   const [lng, setLng] = useState(-46.6333);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const skipNextReverseRef = useRef(false);
+  const addressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,27 +58,93 @@ function NewRevisitContent() {
     }
   };
 
-  // Try to get user location on mount
   useEffect(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
+    let active = true;
+
+    const cached = getLastKnownLocation();
+    if (cached) {
+      setLat(cached.lat);
+      setLng(cached.lng);
+    }
+
+    resolveUserLocation({
+      maxAgeMs: LOCATION_CACHE_MAX_AGE_MS,
+      timeoutMs: 9000,
+      enableHighAccuracy: false,
+    }).then((position) => {
+      if (!active || !position) {
+        return;
+      }
+
+      setLat(position.lat);
+      setLng(position.lng);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    if (skipNextReverseRef.current) {
+      skipNextReverseRef.current = false;
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLat(pos.coords.latitude);
-        setLng(pos.coords.longitude);
-      },
-      () => {
-        // Keep default Sao Paulo coordinates when location is denied/unavailable.
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0,
-      },
-    );
+    reverseGeocodeCoordinates({ lat, lng })
+      .then((resolvedAddress) => {
+        if (!active || !resolvedAddress) {
+          return;
+        }
+
+        setAddress(resolvedAddress);
+      })
+      .catch(() => {
+        // Keep manual address when reverse geocoding fails.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [lat, lng]);
+
+  useEffect(() => {
+    return () => {
+      if (addressDebounceRef.current) {
+        clearTimeout(addressDebounceRef.current);
+      }
+    };
   }, []);
+
+  const handleAddressChange = (value: string) => {
+    setAddress(value);
+
+    if (addressDebounceRef.current) {
+      clearTimeout(addressDebounceRef.current);
+    }
+
+    if (!value.trim() || value.trim().length < 5) {
+      return;
+    }
+
+    addressDebounceRef.current = setTimeout(() => {
+      geocodeAddress(value.trim())
+        .then((coords) => {
+          if (!coords) {
+            return;
+          }
+
+          skipNextReverseRef.current = true;
+          setLat(coords.lat);
+          setLng(coords.lng);
+        })
+        .catch(() => {
+          // Keep typed address when geocoding fails.
+        });
+    }, 700);
+  };
 
   return (
     <div className="mobile-page min-h-screen flex flex-col">
@@ -134,7 +208,7 @@ function NewRevisitContent() {
                 className="input-field"
                 placeholder="Rua, número, bairro"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                onChange={(e) => handleAddressChange(e.target.value)}
                 required
               />
             </div>

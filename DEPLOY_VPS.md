@@ -34,6 +34,7 @@ Preencha obrigatoriamente:
 - `JWT_SECRET`
 - `JWT_REFRESH_SECRET`
 - `NEXT_PUBLIC_GOOGLE_MAPS_KEY` (se usar mapa Google em producao)
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (para login/cadastro com Google)
 
 ## 3.1) Confirmar que a VPS esta em PostgreSQL
 
