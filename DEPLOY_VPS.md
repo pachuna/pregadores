@@ -129,6 +129,20 @@ No provedor DNS:
 
 ## 9) Operacao do dia a dia
 
+Atualizacao automatizada (recomendado):
+
+```bash
+cd /var/www/pregadores
+chmod +x atualizar-vps.sh
+./atualizar-vps.sh
+```
+
+Variaveis opcionais:
+
+```bash
+APP_DIR=/var/www/pregadores BRANCH=main PM2_APP=pregadores-web RUN_MIGRATE=1 ./atualizar-vps.sh
+```
+
 Atualizar deploy:
 
 ```bash
