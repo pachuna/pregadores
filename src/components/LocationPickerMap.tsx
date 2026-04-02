@@ -76,8 +76,11 @@ function FallbackPicker({
       )}
       <div className="flex gap-2 w-full max-w-xs">
         <div className="flex-1">
-          <label className="input-label">Latitude</label>
+          <label htmlFor="latitude" className="input-label">
+            Latitude
+          </label>
           <input
+            id="latitude"
             type="number"
             step="any"
             className="input-field text-sm"
@@ -86,8 +89,11 @@ function FallbackPicker({
           />
         </div>
         <div className="flex-1">
-          <label className="input-label">Longitude</label>
+          <label htmlFor="longitude" className="input-label">
+            Longitude
+          </label>
           <input
+            id="longitude"
             type="number"
             step="any"
             className="input-field text-sm"

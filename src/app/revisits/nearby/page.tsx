@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { revisitsApi } from "@/lib/api";
 import AuthGuard from "@/components/AuthGuard";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import type { Revisit } from "@/lib/types";
 
 export default function NearbyRevisitsPage() {
@@ -48,13 +49,16 @@ function NearbyContent() {
   }, [load]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="mobile-page min-h-screen flex flex-col">
       {/* Header */}
       <header
-        className="flex items-center px-4 py-3 shadow-md"
+        className="sticky top-0 flex items-center px-4 py-3 shadow-md z-10"
         style={{ background: "var(--color-primary)" }}
       >
         <button
+          type="button"
+          aria-label="Voltar"
+          title="Voltar"
           className="text-white text-2xl mr-3 leading-none"
           onClick={() => router.back()}
         >
@@ -63,9 +67,9 @@ function NearbyContent() {
         <h1 className="text-white text-lg font-bold">Revisitas Próximas</h1>
       </header>
 
-      <div className="flex-1 overflow-auto p-4">
+      <div className="mobile-content flex-1 overflow-auto p-4">
         {loading && (
-          <p className="text-center text-[var(--color-text-light)] py-8">
+          <p className="text-center text-[var(--color-text-light)] py-8 card">
             Buscando revisitas próximas...
           </p>
         )}
@@ -80,7 +84,7 @@ function NearbyContent() {
         )}
 
         {!loading && !error && items.length === 0 && (
-          <p className="text-center text-[var(--color-text-light)] py-8">
+          <p className="text-center text-[var(--color-text-light)] py-8 card">
             Nenhuma revisita encontrada no raio de 15 km.
           </p>
         )}
@@ -112,6 +116,8 @@ function NearbyContent() {
           ))}
         </div>
       </div>
+
+      <MobileBottomNav />
     </div>
   );
 }

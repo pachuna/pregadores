@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { revisitsApi } from "@/lib/api";
 import AuthGuard from "@/components/AuthGuard";
 import LocationPickerMap from "@/components/LocationPickerMap";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 export default function NewRevisitPage() {
   return (
@@ -72,13 +73,16 @@ function NewRevisitContent() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="mobile-page min-h-screen flex flex-col">
       {/* Header */}
       <header
-        className="flex items-center px-4 py-3 shadow-md"
+        className="sticky top-0 flex items-center px-4 py-3 shadow-md z-10"
         style={{ background: "var(--color-primary)" }}
       >
         <button
+          type="button"
+          aria-label="Voltar"
+          title="Voltar"
           className="text-white text-2xl mr-3 leading-none"
           onClick={() => router.back()}
         >
@@ -87,7 +91,7 @@ function NewRevisitContent() {
         <h1 className="text-white text-lg font-bold">Nova Revisita</h1>
       </header>
 
-      <div className="flex-1 overflow-auto p-4">
+      <div className="mobile-content flex-1 overflow-auto p-4">
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto flex flex-col gap-4">
           {/* Map */}
           <div className="card p-0 overflow-hidden" style={{ height: 300 }}>
@@ -108,8 +112,11 @@ function NewRevisitContent() {
           {/* Fields */}
           <div className="card flex flex-col gap-4">
             <div>
-              <label className="input-label">Nome *</label>
+              <label htmlFor="revisit-name" className="input-label">
+                Nome *
+              </label>
               <input
+                id="revisit-name"
                 className="input-field"
                 placeholder="Nome da pessoa"
                 value={name}
@@ -119,8 +126,11 @@ function NewRevisitContent() {
             </div>
 
             <div>
-              <label className="input-label">Endereço *</label>
+              <label htmlFor="revisit-address" className="input-label">
+                Endereço *
+              </label>
               <input
+                id="revisit-address"
                 className="input-field"
                 placeholder="Rua, número, bairro"
                 value={address}
@@ -130,8 +140,11 @@ function NewRevisitContent() {
             </div>
 
             <div>
-              <label className="input-label">O que foi falado</label>
+              <label htmlFor="revisit-notes" className="input-label">
+                O que foi falado
+              </label>
               <textarea
+                id="revisit-notes"
                 className="input-field"
                 placeholder="Anotações sobre a visita..."
                 value={notes}
@@ -153,6 +166,8 @@ function NewRevisitContent() {
           </div>
         </form>
       </div>
+
+      <MobileBottomNav />
     </div>
   );
 }

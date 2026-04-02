@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authApi } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 
@@ -13,6 +13,20 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const setTokens = useAuthStore((s) => s.setTokens);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const reason = searchParams.get("reason");
+    if (reason === "session-expired") {
+      setError("Sua sessão expirou. Faça login novamente.");
+      router.replace("/login");
+      return;
+    }
+    if (reason === "unauthorized") {
+      setError("Faça login para continuar.");
+      router.replace("/login");
+    }
+  }, [router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,23 +46,27 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      {/* Hero */}
-      <div
-        className="w-full text-center py-10 mb-8 rounded-b-3xl"
-        style={{ background: "var(--color-primary)" }}
-      >
-        <h1 className="text-4xl font-bold text-white tracking-wide">
-          Pregadores
-        </h1>
-        <p className="text-white/80 mt-2">Gerenciamento de Revisitas</p>
+    <div className="mobile-page min-h-screen px-4 pt-10 pb-8 flex flex-col items-center">
+      <div className="w-full max-w-md text-center mb-6">
+        <div
+          className="rounded-3xl px-6 py-8 shadow-lg border"
+          style={{
+            background:
+              "linear-gradient(145deg, var(--color-primary) 0%, var(--color-primary-dark) 62%, #2f4778 100%)",
+            borderColor: "rgba(255,255,255,0.2)",
+          }}
+        >
+          <p className="text-white/70 text-xs tracking-[0.18em] uppercase">JW Style</p>
+          <h1 className="text-4xl font-bold text-white tracking-wide mt-2">Pregadores</h1>
+          <p className="text-white/80 mt-2 text-sm">Gerenciamento de Revisitas</p>
+        </div>
       </div>
 
-      {/* Card */}
-      <div className="card w-full max-w-md">
+      <div className="card w-full max-w-md border border-[var(--color-border)]">
         {/* Tabs */}
         <div className="flex mb-6 border-b border-[var(--color-border)]">
           <button
+            type="button"
             className={`flex-1 pb-2 text-center font-semibold transition-colors ${
               !isRegister
                 ? "border-b-2 border-[var(--color-primary)] text-[var(--color-primary)]"
@@ -59,6 +77,7 @@ export default function LoginPage() {
             Entrar
           </button>
           <button
+            type="button"
             className={`flex-1 pb-2 text-center font-semibold transition-colors ${
               isRegister
                 ? "border-b-2 border-[var(--color-primary)] text-[var(--color-primary)]"
@@ -72,8 +91,11 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="input-label">Email</label>
+            <label htmlFor="email" className="input-label">
+              Email
+            </label>
             <input
+              id="email"
               type="email"
               className="input-field"
               placeholder="seu@email.com"
@@ -84,8 +106,11 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="input-label">Senha</label>
+            <label htmlFor="password" className="input-label">
+              Senha
+            </label>
             <input
+              id="password"
               type="password"
               className="input-field"
               placeholder="••••••••"
