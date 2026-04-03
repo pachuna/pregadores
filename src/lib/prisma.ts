@@ -5,7 +5,7 @@ function createAdapter() {
   const dbUrl = process.env.DATABASE_URL?.trim();
 
   if (dbUrl?.startsWith("postgresql://") || dbUrl?.startsWith("postgres://")) {
-    return new PrismaPg({ connectionString: dbUrl });
+    return new PrismaPg({ connectionString: dbUrl }, { schema: "public" });
   }
 
   if (dbUrl?.startsWith("file:")) {

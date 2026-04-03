@@ -21,8 +21,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "pregadores-auth",
-      // Keep auth data only for the browser tab lifetime to reduce exposure.
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => localStorage),
     },
   ),
 );

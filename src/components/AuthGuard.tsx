@@ -1,20 +1,45 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { authApi } from "@/lib/api";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const token = useAuthStore((s) => s.accessToken);
+  const { accessToken, refreshToken, setTokens, logout } = useAuthStore();
   const router = useRouter();
+  const [checking, setChecking] = useState(!accessToken && !!refreshToken);
 
   useEffect(() => {
-    if (!token) {
-      router.replace("/login");
+    // Tem accessToken — autenticado
+    if (accessToken) {
+      setChecking(false);
+      return;
     }
-  }, [token, router]);
 
-  if (!token) return null;
+    // Sem nenhum token — vai para login
+    if (!refreshToken) {
+      router.replace("/login");
+      return;
+    }
+
+    // Tem refreshToken mas sem accessToken — tenta renovar silenciosamente
+    authApi
+      .refresh(refreshToken)
+      .then(({ data }) => {
+        setTokens(data.accessToken, data.refreshToken);
+      })
+      .catch(() => {
+        logout();
+        router.replace("/login");
+      })
+      .finally(() => {
+        setChecking(false);
+      });
+  }, [accessToken, refreshToken, setTokens, logout, router]);
+
+  if (checking) return null;
+  if (!accessToken) return null;
 
   return <>{children}</>;
 }

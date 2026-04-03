@@ -6,6 +6,9 @@ import { defineConfig } from "prisma/config";
 
 // Load default env first, then allow production values to override.
 loadEnv({ path: ".env" });
+if (existsSync(".env.local")) {
+  loadEnv({ path: ".env.local", override: true });
+}
 if (existsSync(".env.production")) {
   loadEnv({ path: ".env.production", override: true });
 }
