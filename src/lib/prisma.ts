@@ -1,7 +1,5 @@
 import { PrismaClient } from "../generated/prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaPg } from "@prisma/adapter-pg";
-import path from "path";
 
 function createAdapter() {
   const dbUrl = process.env.DATABASE_URL?.trim();
@@ -11,22 +9,18 @@ function createAdapter() {
   }
 
   if (dbUrl?.startsWith("file:")) {
-    const sqlitePath = dbUrl.slice("file:".length);
-    const resolvedSqlitePath = path.isAbsolute(sqlitePath)
-      ? sqlitePath
-      : path.resolve(process.cwd(), sqlitePath);
-
-    return new PrismaBetterSqlite3({ url: resolvedSqlitePath });
-  }
-
-  if (process.env.NODE_ENV === "production") {
     throw new Error(
-      "DATABASE_URL inválida em produção. Use postgres://... ou file:/caminho/absoluto.db"
+      "DATABASE_URL com file: nao e compativel com este projeto. Use postgres://...",
     );
   }
 
-  const fallbackDevDbPath = path.resolve(process.cwd(), "prisma", "dev.db");
-  return new PrismaBetterSqlite3({ url: fallbackDevDbPath });
+  if (!dbUrl) {
+    throw new Error(
+      "DATABASE_URL nao definida. Configure uma conexao PostgreSQL para iniciar a aplicacao.",
+    );
+  }
+
+  throw new Error("DATABASE_URL invalida. Use postgres://... ou postgresql://...");
 }
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };

@@ -101,19 +101,43 @@ export async function resolveUserLocation(options?: {
     return fallback;
   }
 
-  try {
-    const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+  const getCurrentPosition = (args: {
+    timeout: number;
+    highAccuracy: boolean;
+  }) => {
+    return new Promise<GeolocationPosition>((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy,
-        timeout: timeoutMs,
+        enableHighAccuracy: args.highAccuracy,
+        timeout: args.timeout,
         maximumAge: 0,
       });
+    });
+  };
+
+  try {
+    const pos = await getCurrentPosition({
+      timeout: timeoutMs,
+      highAccuracy: enableHighAccuracy,
     });
 
     const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     setCachedLocation(next);
     return next;
   } catch {
-    return fallback;
+    try {
+      const retryPos = await getCurrentPosition({
+        timeout: Math.max(timeoutMs, 18000),
+        highAccuracy: true,
+      });
+
+      const next = {
+        lat: retryPos.coords.latitude,
+        lng: retryPos.coords.longitude,
+      };
+      setCachedLocation(next);
+      return next;
+    } catch {
+      return fallback;
+    }
   }
 }

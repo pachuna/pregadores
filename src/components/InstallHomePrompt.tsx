@@ -9,6 +9,15 @@ type BeforeInstallPromptEvent = Event & {
 
 const HIDE_KEY = "pregadores-a2hs-hide-v1";
 
+function isIOS() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const ua = window.navigator.userAgent.toLowerCase();
+  return /iphone|ipad|ipod/.test(ua);
+}
+
 function isStandaloneMode() {
   if (typeof window === "undefined") {
     return false;
@@ -24,6 +33,7 @@ export default function InstallHomePrompt() {
   const [visible, setVisible] = useState(false);
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
+  const iOSDevice = useMemo(() => isIOS(), []);
 
   const supportsInstall = useMemo(() => deferredPrompt != null, [deferredPrompt]);
 
@@ -112,8 +122,18 @@ export default function InstallHomePrompt() {
 
         {!supportsInstall && (
           <p className="text-xs text-[var(--color-text-light)] mt-2">
-            Dica: no navegador, use o menu e escolha &quot;Adicionar a tela inicial&quot;.
+            {iOSDevice
+              ? "No iPhone: toque em Compartilhar e depois em Adicionar a Tela de Inicio."
+              : "No navegador, use o menu e escolha Adicionar a tela inicial."}
           </p>
+        )}
+
+        {iOSDevice && !supportsInstall && (
+          <ol className="mt-2 space-y-1 text-xs text-[var(--color-text-light)] list-decimal pl-4">
+            <li>Toque no botao Compartilhar do Safari.</li>
+            <li>Role e toque em Adicionar a Tela de Inicio.</li>
+            <li>Confirme em Adicionar no canto superior.</li>
+          </ol>
         )}
 
         <div className="mt-3 flex flex-col gap-2">

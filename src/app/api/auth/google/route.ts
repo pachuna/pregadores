@@ -10,19 +10,26 @@ const SALT_ROUNDS = 12;
 interface GoogleTokenInfo {
   aud?: string;
   email?: string;
-  email_verified?: string;
+  email_verified?: string | boolean;
 }
 
-function getGoogleClientId() {
-  const clientId =
-    process.env.GOOGLE_CLIENT_ID?.trim() ||
-    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
+function getAllowedGoogleClientIds() {
+  const fromServer = (process.env.GOOGLE_CLIENT_ID || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 
-  if (!clientId) {
+  const fromPublic = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  const unique = Array.from(new Set([...fromServer, ...fromPublic]));
+  if (unique.length === 0) {
     throw new Error("GOOGLE_CLIENT_ID não configurado no servidor");
   }
 
-  return clientId;
+  return unique;
 }
 
 export async function POST(request: NextRequest) {
@@ -37,7 +44,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const clientId = getGoogleClientId();
+    const allowedClientIds = getAllowedGoogleClientIds();
     const tokenInfoResponse = await fetch(
       `${GOOGLE_TOKEN_INFO_URL}?id_token=${encodeURIComponent(idToken)}`,
       { cache: "no-store" },
@@ -51,8 +58,14 @@ export async function POST(request: NextRequest) {
     }
 
     const tokenInfo = (await tokenInfoResponse.json()) as GoogleTokenInfo;
+    const emailVerified =
+      tokenInfo.email_verified === true || tokenInfo.email_verified === "true";
 
-    if (tokenInfo.aud !== clientId || tokenInfo.email_verified !== "true") {
+    if (!tokenInfo.aud || !allowedClientIds.includes(tokenInfo.aud) || !emailVerified) {
+      console.error("Google token recusado", {
+        aud: tokenInfo.aud,
+        emailVerified: tokenInfo.email_verified,
+      });
       return NextResponse.json(
         { error: "Token Google inválido" },
         { status: 401 },

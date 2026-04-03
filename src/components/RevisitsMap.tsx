@@ -29,6 +29,12 @@ const INACTIVE_PIN_ICON =
     '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><path fill="#64748b" d="M12 2C8.13 2 5 5.13 5 9c0 4.58 5.2 11.16 6.37 12.58a1 1 0 0 0 1.26 0C13.8 20.16 19 13.58 19 9c0-3.87-3.13-7-7-7Z"/><circle cx="12" cy="9" r="2.4" fill="#ffffff"/></svg>',
   );
 
+const USER_PIN_ICON =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5" fill="#1d4ed8"/><circle cx="12" cy="12" r="2.7" fill="#ffffff"/></svg>',
+  );
+
 function shortName(name: string) {
   const value = name.trim();
   if (value.length <= 18) {
@@ -40,6 +46,7 @@ function shortName(name: string) {
 export default function RevisitsMap({ revisits, center, userPos }: Props) {
   const [selected, setSelected] = useState<Revisit | null>(null);
   const [mapsLoadError, setMapsLoadError] = useState(false);
+  const mapCenterKey = `${center.lat.toFixed(5)}-${center.lng.toFixed(5)}`;
 
   // If there is no API key or Google Maps failed to load, show fallback list view
   if (!MAPS_KEY || mapsLoadError) {
@@ -61,6 +68,7 @@ export default function RevisitsMap({ revisits, center, userPos }: Props) {
       }}
     >
       <Map
+        key={mapCenterKey}
         defaultZoom={15}
         defaultCenter={center}
         className="w-full h-full"
@@ -68,7 +76,12 @@ export default function RevisitsMap({ revisits, center, userPos }: Props) {
       >
         {/* User position marker */}
         {userPos && (
-          <Marker position={userPos} title="Você está aqui" />
+          <Marker
+            position={userPos}
+            title="Você está aqui"
+            icon={USER_PIN_ICON}
+            zIndex={999}
+          />
         )}
 
         {/* Revisit markers */}

@@ -106,8 +106,16 @@ export default function LoginPage() {
             const { data } = await authApi.google(credential);
             setTokens(data.accessToken, data.refreshToken);
             router.replace("/home");
-          } catch {
-            setError("Não foi possível entrar com Google.");
+          } catch (err: unknown) {
+            const message =
+              typeof err === "object" &&
+              err !== null &&
+              "response" in err &&
+              typeof (err as { response?: { data?: { error?: string } } }).response?.data
+                ?.error === "string"
+                ? (err as { response: { data: { error: string } } }).response.data.error
+                : "Não foi possível entrar com Google.";
+            setError(message);
           } finally {
             setGoogleLoading(false);
           }
@@ -186,7 +194,6 @@ export default function LoginPage() {
             borderColor: "rgba(255,255,255,0.2)",
           }}
         >
-          <p className="text-white/70 text-xs tracking-[0.18em] uppercase">JW Style</p>
           <h1 className="text-4xl font-bold text-white tracking-wide mt-2">Pregadores</h1>
           <p className="text-white/80 mt-2 text-sm">Gerenciamento de Revisitas</p>
         </div>
