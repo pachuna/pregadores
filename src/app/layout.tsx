@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Merriweather, Source_Sans_3 } from "next/font/google";
+import InstallHomePrompt from "@/components/InstallHomePrompt";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({
@@ -35,6 +36,7 @@ export default function RootLayout({
         className={`${sourceSans.variable} ${merriweather.variable} min-h-screen bg-[var(--color-surface)] text-[var(--color-text)]`}
       >
         {children}
+        <InstallHomePrompt />
       </body>
     </html>
   );

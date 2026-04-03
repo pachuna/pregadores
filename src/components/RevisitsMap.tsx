@@ -29,6 +29,14 @@ const INACTIVE_PIN_ICON =
     '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><path fill="#64748b" d="M12 2C8.13 2 5 5.13 5 9c0 4.58 5.2 11.16 6.37 12.58a1 1 0 0 0 1.26 0C13.8 20.16 19 13.58 19 9c0-3.87-3.13-7-7-7Z"/><circle cx="12" cy="9" r="2.4" fill="#ffffff"/></svg>',
   );
 
+function shortName(name: string) {
+  const value = name.trim();
+  if (value.length <= 18) {
+    return value;
+  }
+  return `${value.slice(0, 17)}...`;
+}
+
 export default function RevisitsMap({ revisits, center, userPos }: Props) {
   const [selected, setSelected] = useState<Revisit | null>(null);
   const [mapsLoadError, setMapsLoadError] = useState(false);
@@ -70,6 +78,13 @@ export default function RevisitsMap({ revisits, center, userPos }: Props) {
             position={{ lat: r.latitude, lng: r.longitude }}
             title={r.name}
             icon={r.isActive ? ACTIVE_PIN_ICON : INACTIVE_PIN_ICON}
+            label={{
+              text: shortName(r.name),
+              color: r.isActive ? "#166534" : "#475569",
+              fontSize: "11px",
+              fontWeight: "700",
+              className: "revisit-pin-label",
+            }}
             onClick={() => setSelected(r)}
           />
         ))}
