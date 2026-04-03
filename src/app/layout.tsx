@@ -1,7 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Merriweather, Source_Sans_3 } from "next/font/google";
 import InstallHomePrompt from "@/components/InstallHomePrompt";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import "@fontsource/merriweather/400.css";
+import "@fontsource/merriweather/700.css";
+import "@fontsource/merriweather/900.css";
+import "@fontsource/source-sans-3/400.css";
+import "@fontsource/source-sans-3/500.css";
+import "@fontsource/source-sans-3/600.css";
+import "@fontsource/source-sans-3/700.css";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({
@@ -45,9 +51,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body
-        className={`${sourceSans.variable} ${merriweather.variable} min-h-screen bg-[var(--color-surface)] text-[var(--color-text)]`}
-      >
+      <body className="min-h-screen bg-[var(--color-surface)] text-[var(--color-text)]">
         {children}
         <InstallHomePrompt />
         <ServiceWorkerRegister />

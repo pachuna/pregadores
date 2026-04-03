@@ -24,7 +24,7 @@
 
 body {
   margin: 0;
-  font-family: var(--font-sans), "Segoe UI", sans-serif;
+  font-family: "Source Sans 3", "Segoe UI", sans-serif;
   background:
     linear-gradient(160deg, #2f4778 0%, #3b5998 38%, #4a6da7 72%, #6e8ec2 100%);
   color: var(--color-text);
@@ -35,7 +35,7 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-heading), Georgia, serif;
+  font-family: "Merriweather", Georgia, serif;
   letter-spacing: -0.01em;
 }
 
