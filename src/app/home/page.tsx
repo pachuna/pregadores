@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { revisitsApi, statsApi, type StatsData } from "@/lib/api";
+import { revisitsApi, statsApi, presenceApi, type StatsData } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import AuthGuard from "@/components/AuthGuard";
 import RevisitsMap from "@/components/RevisitsMap";
@@ -176,8 +176,16 @@ function HomeContent() {
     loadRevisits();
     statsApi.get().then(({ data }) => setStats(data)).catch(() => {});
 
+    // Heartbeat: marca o usuário como ativo a cada 30s
+    presenceApi.ping().catch(() => {});
+    const heartbeatId = setInterval(() => {
+      presenceApi.ping().catch(() => {});
+      statsApi.get().then(({ data }) => setStats(data)).catch(() => {});
+    }, 30_000);
+
     return () => {
       active = false;
+      clearInterval(heartbeatId);
     };
   }, [loadRevisits]);
 
@@ -353,14 +361,30 @@ function HomeContent() {
       </header>
 
       {/* Stats Cards */}
-      <div className="px-3 pt-2 pb-1">
-        <div className="grid grid-cols-4 gap-2">
-          <div className="rounded-xl bg-white/90 border border-[var(--color-border)] shadow-sm px-2 py-2 flex flex-col items-center">
+      <div className="px-3 pt-2 pb-1 flex flex-col gap-2">
+        {/* Linha 1: Pregadores + Publicadores Trabalhando */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-xl bg-white/90 border border-[var(--color-border)] shadow-sm px-3 py-2 flex flex-col items-center">
             <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-light)] font-semibold leading-tight text-center">Pregadores</span>
-            <span className="text-xl font-bold text-[var(--color-primary-dark)] leading-tight">
+            <span className="text-2xl font-bold text-[var(--color-primary-dark)] leading-tight">
               {stats ? stats.totalUsers : "—"}
             </span>
           </div>
+          <div className="rounded-xl bg-blue-50 border border-blue-200 shadow-sm px-3 py-2 flex flex-col items-center">
+            <span className="text-[10px] uppercase tracking-wide text-blue-600 font-semibold leading-tight text-center flex items-center gap-1">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+              </span>
+              Trabalhando
+            </span>
+            <span className="text-2xl font-bold text-blue-700 leading-tight">
+              {stats ? stats.onlineUsers : "—"}
+            </span>
+          </div>
+        </div>
+        {/* Linha 2: Revisitas + Ativas + Inativas */}
+        <div className="grid grid-cols-3 gap-2">
           <div className="rounded-xl bg-white/90 border border-[var(--color-border)] shadow-sm px-2 py-2 flex flex-col items-center">
             <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-light)] font-semibold leading-tight text-center">Revisitas</span>
             <span className="text-xl font-bold text-[var(--color-primary-dark)] leading-tight">

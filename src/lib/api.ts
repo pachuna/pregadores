@@ -132,7 +132,7 @@ export const revisitsApi = {
 
 export interface StatsData {
   totalUsers: number;
-  totalActive: number;
+  onlineUsers: number;
   totalRevisits: number;
   activeRevisits: number;
   inactiveRevisits: number;
@@ -140,4 +140,8 @@ export interface StatsData {
 
 export const statsApi = {
   get: () => api.get<StatsData>("/api/stats"),
+};
+
+export const presenceApi = {
+  ping: () => api.post("/api/presence"),
 };

@@ -8,10 +8,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const [totalUsers, totalActive, totalRevisits, activeRevisits, inactiveRevisits] =
+  const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+
+  const [totalUsers, onlineUsers, totalRevisits, activeRevisits, inactiveRevisits] =
     await Promise.all([
       prisma.user.count(),
-      prisma.user.count(),
+      prisma.user.count({ where: { lastSeenAt: { gte: twoMinutesAgo } } }),
       prisma.revisit.count({ where: { userId } }),
       prisma.revisit.count({ where: { userId, isActive: true } }),
       prisma.revisit.count({ where: { userId, isActive: false } }),
@@ -19,7 +21,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     totalUsers,
-    totalActive,
+    onlineUsers,
     totalRevisits,
     activeRevisits,
     inactiveRevisits,
