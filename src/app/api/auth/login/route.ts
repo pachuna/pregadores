@@ -6,7 +6,9 @@ import { generateTokenPair } from "@/lib/jwt";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password } = body;
+    const rawEmail = typeof body?.email === "string" ? body.email : "";
+    const password = typeof body?.password === "string" ? body.password : "";
+    const email = rawEmail.trim().toLowerCase();
 
     if (!email || !password) {
       return NextResponse.json(

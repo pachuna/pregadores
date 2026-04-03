@@ -10,29 +10,19 @@ interface Props {
   onAddressResolved?: (address: string) => void;
 }
 
-type GeocoderResponse = {
-  results?: Array<{
-    formatted_address?: string;
-  }>;
-};
-
-type MapsGeocoder = {
-  geocode: (request: {
-    location: { lat: number; lng: number };
-  }) => Promise<GeocoderResponse>;
-};
-
-type MapsNamespace = {
-  Geocoder?: new () => MapsGeocoder;
-};
-
-type WindowWithGoogleMaps = Window & {
-  google?: {
-    maps?: MapsNamespace;
-  };
-};
-
 const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "";
+
+interface GeocodeResponse {
+  results?: Array<{ formatted_address?: string }>;
+}
+
+interface GoogleMapsGeocoder {
+  geocode: (request: { location: { lat: number; lng: number } }) => Promise<GeocodeResponse>;
+}
+
+interface GoogleMapsNamespace {
+  Geocoder?: new () => GoogleMapsGeocoder;
+}
 
 function toCoordinate(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -61,7 +51,9 @@ async function reverseGeocodeWithMaps(
     return null;
   }
 
-  const maps = (window as WindowWithGoogleMaps).google?.maps;
+  const maps = (
+    window as Window & { google?: { maps?: GoogleMapsNamespace } }
+  ).google?.maps;
   if (!maps?.Geocoder) {
     return null;
   }
@@ -87,6 +79,7 @@ export default function LocationPickerMap({
   onAddressResolved,
 }: Props) {
   const [mapsLoadError, setMapsLoadError] = useState(false);
+  const centerKey = `${lat.toFixed(6)}-${lng.toFixed(6)}`;
 
   if (!MAPS_KEY || mapsLoadError) {
     return (
@@ -108,6 +101,7 @@ export default function LocationPickerMap({
       }}
     >
       <Map
+        key={centerKey}
         defaultZoom={15}
         defaultCenter={{ lat, lng }}
         className="w-full h-full rounded-lg"

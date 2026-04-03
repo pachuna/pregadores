@@ -2,22 +2,30 @@
   "name": "Pregadores",
   "short_name": "Pregadores",
   "description": "Gerenciamento de revisitas com mapa interativo",
-  "start_url": "/",
+  "id": "/",
+  "start_url": "/login",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f5f5f5",
   "theme_color": "#4a6da7",
   "icons": [
     {
-      "src": "/Min-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "/Min.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
     }
   ]
 }

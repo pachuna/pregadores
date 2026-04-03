@@ -35,12 +35,19 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() || "";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isRegister, setIsRegister] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [showCreateAccount, setShowCreateAccount] = useState(false);
+  const [registerLoading, setRegisterLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const accessToken = useAuthStore((s) => s.accessToken);
   const setTokens = useAuthStore((s) => s.setTokens);
   const router = useRouter();
+
+  useEffect(() => {
+    if (accessToken) {
+      router.replace("/home");
+    }
+  }, [accessToken, router]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -112,7 +119,7 @@ export default function LoginPage() {
         theme: "outline",
         size: "large",
         shape: "pill",
-        text: isRegister ? "signup_with" : "signin_with",
+        text: "continue_with",
         width: Math.min(Math.floor(element.clientWidth), 420),
       });
     };
@@ -143,121 +150,59 @@ export default function LoginPage() {
         clearTimeout(retryTimer);
       }
     };
-  }, [isRegister, router, setTokens]);
+  }, [router, setTokens]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setRegisterLoading(true);
     try {
-      const { data } = isRegister
-        ? await authApi.register(email, password)
-        : await authApi.login(email, password);
+      const { data } = await authApi.register(email.trim(), password);
       setTokens(data.accessToken, data.refreshToken);
       router.replace("/home");
-    } catch {
-      setError(isRegister ? "Falha ao criar conta." : "Credenciais inválidas.");
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error ===
+          "string"
+          ? (err as { response: { data: { error: string } } }).response.data.error
+          : "Não foi possível criar sua conta.";
+      setError(message);
     } finally {
-      setLoading(false);
+      setRegisterLoading(false);
     }
   };
 
   return (
     <div className="mobile-page min-h-screen px-4 pt-10 pb-8 flex flex-col items-center">
-      <div className="w-full max-w-md text-center mb-7">
+      <div className="w-full max-w-md text-center mb-6">
         <div
-          className="rounded-3xl px-6 py-9 shadow-[var(--shadow-strong)] border"
+          className="rounded-3xl px-6 py-8 shadow-lg border"
           style={{
             background:
               "linear-gradient(145deg, var(--color-primary) 0%, var(--color-primary-dark) 62%, #2f4778 100%)",
-            borderColor: "rgba(255,255,255,0.24)",
+            borderColor: "rgba(255,255,255,0.2)",
           }}
         >
-          <p className="text-white/80 text-[11px] tracking-[0.22em] uppercase font-semibold">
-            Território Digital
-          </p>
-          <h1 className="text-4xl font-black text-white tracking-wide mt-2">Pregadores</h1>
-          <p className="text-white/85 mt-2 text-sm">Gerenciamento de Revisitas</p>
+          <p className="text-white/70 text-xs tracking-[0.18em] uppercase">JW Style</p>
+          <h1 className="text-4xl font-bold text-white tracking-wide mt-2">Pregadores</h1>
+          <p className="text-white/80 mt-2 text-sm">Gerenciamento de Revisitas</p>
         </div>
       </div>
 
-      <div className="card w-full max-w-md">
-        {/* Tabs */}
-        <div className="flex mb-6 border-b border-[var(--color-border)]">
-          <button
-            type="button"
-            className={`flex-1 pb-2 text-center font-semibold transition-colors ${
-              !isRegister
-                ? "border-b-2 border-[var(--color-primary)] text-[var(--color-primary)]"
-                : "text-[var(--color-text-light)]"
-            }`}
-            onClick={() => setIsRegister(false)}
-          >
-            Entrar
-          </button>
-          <button
-            type="button"
-            className={`flex-1 pb-2 text-center font-semibold transition-colors ${
-              isRegister
-                ? "border-b-2 border-[var(--color-primary)] text-[var(--color-primary)]"
-                : "text-[var(--color-text-light)]"
-            }`}
-            onClick={() => setIsRegister(true)}
-          >
-            Criar Conta
-          </button>
+      <div className="card w-full max-w-md border border-[var(--color-border)]">
+        <div className="mb-6 border-b border-[var(--color-border)] pb-2">
+          <h2 className="text-center font-semibold text-[var(--color-primary)]">Entrar com Google</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label htmlFor="email" className="input-label">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              className="input-field"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="input-label">
-              Senha
-            </label>
-            <input
-              id="password"
-              type="password"
-              className="input-field"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              autoComplete={isRegister ? "new-password" : "current-password"}
-            />
-          </div>
-
+        <div className="flex flex-col gap-4">
           {error && (
-            <p className="text-sm text-[var(--color-danger)] text-center font-medium">
+            <p className="text-sm text-[var(--color-danger)] text-center">
               {error}
             </p>
           )}
-
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? "Carregando..." : isRegister ? "Criar Conta" : "Entrar"}
-          </button>
-
-          <div className="flex items-center gap-3 pt-1">
-            <div className="h-px bg-[var(--color-border)] flex-1" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-light)]">
-              ou
-            </span>
-            <div className="h-px bg-[var(--color-border)] flex-1" />
-          </div>
 
           {GOOGLE_CLIENT_ID ? (
             <div>
@@ -273,7 +218,66 @@ export default function LoginPage() {
               Configure NEXT_PUBLIC_GOOGLE_CLIENT_ID para habilitar login com Google.
             </p>
           )}
-        </form>
+
+          <div className="flex items-center gap-3 pt-1">
+            <div className="h-px bg-[var(--color-border)] flex-1" />
+            <span className="text-xs text-[var(--color-text-light)]">ou</span>
+            <div className="h-px bg-[var(--color-border)] flex-1" />
+          </div>
+
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-alt)]/60 p-3">
+            <p className="text-sm text-center font-medium text-[var(--color-text)]">
+              Prefere criar conta com email?
+            </p>
+            <button
+              type="button"
+              className="btn-secondary w-full mt-3"
+              onClick={() => setShowCreateAccount((prev) => !prev)}
+            >
+              {showCreateAccount ? "Ocultar criacao por email" : "Criar conta com email e senha"}
+            </button>
+
+            {showCreateAccount && (
+              <form onSubmit={handleCreateAccount} className="mt-4 flex flex-col gap-3">
+                <div>
+                  <label htmlFor="email" className="input-label">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    className="input-field"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="password" className="input-label">
+                    Senha
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    className="input-field"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <button type="submit" className="btn-primary" disabled={registerLoading}>
+                  {registerLoading ? "Criando conta..." : "Criar conta"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

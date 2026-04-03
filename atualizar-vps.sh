@@ -22,6 +22,17 @@ command -v pm2 >/dev/null 2>&1 || fail "pm2 nao encontrado"
 [ -d "$APP_DIR" ] || fail "diretorio da app nao existe: $APP_DIR"
 cd "$APP_DIR"
 
+if [ -f ".env.production" ]; then
+  log "Validando variaveis obrigatorias em .env.production..."
+  for key in DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET NEXT_PUBLIC_GOOGLE_CLIENT_ID GOOGLE_CLIENT_ID; do
+    if ! grep -q "^${key}=" .env.production; then
+      fail "variavel ${key} ausente em .env.production"
+    fi
+  done
+else
+  log "Aviso: .env.production nao encontrado em $APP_DIR"
+fi
+
 log "Atualizando codigo ($BRANCH)..."
 git fetch origin "$BRANCH"
 git checkout "$BRANCH"
