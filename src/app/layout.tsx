@@ -10,18 +10,6 @@ import "@fontsource/source-sans-3/600.css";
 import "@fontsource/source-sans-3/700.css";
 import "./globals.css";
 
-const sourceSans = Source_Sans_3({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  weight: ["400", "500", "600", "700"],
-});
-
-const merriweather = Merriweather({
-  subsets: ["latin"],
-  variable: "--font-heading",
-  weight: ["400", "700", "900"],
-});
-
 export const metadata: Metadata = {
   title: "Pregadores — Revisitas",
   description: "Gerenciamento de revisitas com mapa interativo",
