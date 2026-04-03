@@ -129,3 +129,15 @@ export const revisitsApi = {
     },
   ) => api.patch<Revisit>(`/api/revisits/${id}`, data),
 };
+
+export interface StatsData {
+  totalUsers: number;
+  totalActive: number;
+  totalRevisits: number;
+  activeRevisits: number;
+  inactiveRevisits: number;
+}
+
+export const statsApi = {
+  get: () => api.get<StatsData>("/api/stats"),
+};

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { revisitsApi } from "@/lib/api";
+import { revisitsApi, statsApi, type StatsData } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import AuthGuard from "@/components/AuthGuard";
 import RevisitsMap from "@/components/RevisitsMap";
@@ -108,6 +108,7 @@ function HomeContent() {
     null,
   );
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<StatsData | null>(null);
   const [sheetLevel, setSheetLevel] = useState<SheetLevel>("peek");
   const [sheetHeight, setSheetHeight] = useState<number>(SHEET_HEIGHTS.peek);
   const [isDraggingSheet, setIsDraggingSheet] = useState(false);
@@ -173,6 +174,7 @@ function HomeContent() {
     });
 
     loadRevisits();
+    statsApi.get().then(({ data }) => setStats(data)).catch(() => {});
 
     return () => {
       active = false;
@@ -349,6 +351,36 @@ function HomeContent() {
           Sair
         </button>
       </header>
+
+      {/* Stats Cards */}
+      <div className="px-3 pt-2 pb-1">
+        <div className="grid grid-cols-4 gap-2">
+          <div className="rounded-xl bg-white/90 border border-[var(--color-border)] shadow-sm px-2 py-2 flex flex-col items-center">
+            <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-light)] font-semibold leading-tight text-center">Pregadores</span>
+            <span className="text-xl font-bold text-[var(--color-primary-dark)] leading-tight">
+              {stats ? stats.totalUsers : "—"}
+            </span>
+          </div>
+          <div className="rounded-xl bg-white/90 border border-[var(--color-border)] shadow-sm px-2 py-2 flex flex-col items-center">
+            <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-light)] font-semibold leading-tight text-center">Revisitas</span>
+            <span className="text-xl font-bold text-[var(--color-primary-dark)] leading-tight">
+              {stats ? stats.totalRevisits : "—"}
+            </span>
+          </div>
+          <div className="rounded-xl bg-green-50 border border-green-200 shadow-sm px-2 py-2 flex flex-col items-center">
+            <span className="text-[10px] uppercase tracking-wide text-green-700 font-semibold leading-tight text-center">Ativas</span>
+            <span className="text-xl font-bold text-green-700 leading-tight">
+              {stats ? stats.activeRevisits : "—"}
+            </span>
+          </div>
+          <div className="rounded-xl bg-red-50 border border-red-200 shadow-sm px-2 py-2 flex flex-col items-center">
+            <span className="text-[10px] uppercase tracking-wide text-red-600 font-semibold leading-tight text-center">Inativas</span>
+            <span className="text-xl font-bold text-red-500 leading-tight">
+              {stats ? stats.inactiveRevisits : "—"}
+            </span>
+          </div>
+        </div>
+      </div>
 
       {/* Map */}
       <div className="mobile-content flex-1 relative px-3 pt-3">

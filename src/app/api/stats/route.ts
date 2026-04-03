@@ -1,0 +1,27 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getUserIdFromRequest } from "@/lib/auth-middleware";
+
+export async function GET(request: NextRequest) {
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  }
+
+  const [totalUsers, totalActive, totalRevisits, activeRevisits, inactiveRevisits] =
+    await Promise.all([
+      prisma.user.count(),
+      prisma.user.count(),
+      prisma.revisit.count({ where: { userId } }),
+      prisma.revisit.count({ where: { userId, isActive: true } }),
+      prisma.revisit.count({ where: { userId, isActive: false } }),
+    ]);
+
+  return NextResponse.json({
+    totalUsers,
+    totalActive,
+    totalRevisits,
+    activeRevisits,
+    inactiveRevisits,
+  });
+}
