@@ -112,7 +112,20 @@ export const revisitsApi = {
     address: string;
     latitude: number;
     longitude: number;
+    isActive?: boolean;
     notes?: string;
     visitDate: string;
   }) => api.post<Revisit>("/api/revisits", data),
+  update: (
+    id: string,
+    data: {
+      name?: string;
+      address?: string;
+      latitude?: number;
+      longitude?: number;
+      isActive?: boolean;
+      newVisitDate?: string;
+      newVisitSummary?: string;
+    },
+  ) => api.patch<Revisit>(`/api/revisits/${id}`, data),
 };

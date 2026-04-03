@@ -1,5 +1,18 @@
 import type { Metadata, Viewport } from "next";
+import { Merriweather, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
+
+const sourceSans = Source_Sans_3({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  weight: ["400", "500", "600", "700"],
+});
+
+const merriweather = Merriweather({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  weight: ["400", "700", "900"],
+});
 
 export const metadata: Metadata = {
   title: "Pregadores — Revisitas",
@@ -18,7 +31,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-screen bg-[var(--color-surface)]">{children}</body>
+      <body
+        className={`${sourceSans.variable} ${merriweather.variable} min-h-screen bg-[var(--color-surface)] text-[var(--color-text)]`}
+      >
+        {children}
+      </body>
     </html>
   );
 }

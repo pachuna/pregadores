@@ -51,20 +51,22 @@ function NearbyContent() {
   return (
     <div className="mobile-page min-h-screen flex flex-col">
       {/* Header */}
-      <header
-        className="sticky top-0 flex items-center px-4 py-3 shadow-md z-10"
-        style={{ background: "var(--color-primary)" }}
-      >
+      <header className="mobile-header">
         <button
           type="button"
           aria-label="Voltar"
           title="Voltar"
-          className="text-white text-2xl mr-3 leading-none"
+          className="mobile-back-btn"
           onClick={() => router.back()}
         >
           ←
         </button>
-        <h1 className="text-white text-lg font-bold">Revisitas Próximas</h1>
+        <div>
+          <p className="mobile-header__meta">
+            Território
+          </p>
+          <h1 className="mobile-header__title">Revisitas Próximas</h1>
+        </div>
       </header>
 
       <div className="mobile-content flex-1 overflow-auto p-4">
@@ -89,11 +91,25 @@ function NearbyContent() {
           </p>
         )}
 
+        {!loading && !error && items.length > 0 && (
+          <div className="max-w-2xl mx-auto mb-3 surface-note text-center">
+            <p className="text-[11px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-light)]">
+              Resultado da busca
+            </p>
+            <p className="text-sm text-[var(--color-text)] mt-1">
+              {items.length} revisita{items.length > 1 ? "s" : ""} no raio de 15 km
+            </p>
+          </div>
+        )}
+
         <div className="max-w-2xl mx-auto flex flex-col gap-3">
           {items.map((r) => (
-            <div key={r.id} className="card flex justify-between items-start gap-3">
+            <div
+              key={r.id}
+              className="card flex justify-between items-start gap-3 shadow-[0_6px_18px_rgba(22,34,52,0.08)]"
+            >
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold truncate">{r.name}</h3>
+                <h3 className="font-semibold truncate text-[var(--color-primary-dark)]">{r.name}</h3>
                 <p className="text-sm text-[var(--color-text-light)] truncate">
                   {r.address}
                 </p>
@@ -105,7 +121,10 @@ function NearbyContent() {
               {r.distanceKm != null && (
                 <span
                   className="shrink-0 text-xs font-bold px-2 py-1 rounded-full text-white"
-                  style={{ background: "var(--color-accent)" }}
+                  style={{
+                    background:
+                      "linear-gradient(130deg, var(--color-accent) 0%, #a9743f 100%)",
+                  }}
                 >
                   {r.distanceKm < 1
                     ? `${(r.distanceKm * 1000).toFixed(0)} m`

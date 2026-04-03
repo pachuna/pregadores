@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, address, latitude, longitude, notes, visitDate } = body;
+    const { name, address, latitude, longitude, isActive, notes, visitDate } = body;
 
     if (!name || !address || latitude == null || longitude == null || !visitDate) {
       return NextResponse.json(
@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
         address: String(address),
         latitude,
         longitude,
+        isActive: typeof isActive === "boolean" ? isActive : true,
         notes: notes ? String(notes) : null,
         visitDate: new Date(visitDate),
       },

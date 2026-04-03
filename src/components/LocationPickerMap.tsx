@@ -1,23 +1,92 @@
 "use client";
 
-import {
-  APIProvider,
-  Map,
-  Marker,
-} from "@vis.gl/react-google-maps";
+import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps";
 import { useState } from "react";
 
 interface Props {
   lat: number;
   lng: number;
   onChange: (lat: number, lng: number) => void;
+  onAddressResolved?: (address: string) => void;
 }
+
+type GeocoderResponse = {
+  results?: Array<{
+    formatted_address?: string;
+  }>;
+};
+
+type MapsGeocoder = {
+  geocode: (request: {
+    location: { lat: number; lng: number };
+  }) => Promise<GeocoderResponse>;
+};
+
+type MapsNamespace = {
+  Geocoder?: new () => MapsGeocoder;
+};
+
+type WindowWithGoogleMaps = Window & {
+  google?: {
+    maps?: MapsNamespace;
+  };
+};
 
 const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "";
 
-export default function LocationPickerMap({ lat, lng, onChange }: Props) {
+function toCoordinate(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "function") {
+    try {
+      const result = value();
+      return typeof result === "number" && Number.isFinite(result)
+        ? result
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+async function reverseGeocodeWithMaps(
+  lat: number,
+  lng: number,
+): Promise<string | null> {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const maps = (window as WindowWithGoogleMaps).google?.maps;
+  if (!maps?.Geocoder) {
+    return null;
+  }
+
+  const geocoder = new maps.Geocoder();
+
+  try {
+    const result = await geocoder.geocode({ location: { lat, lng } });
+    if (!result?.results?.length) {
+      return null;
+    }
+
+    return result.results[0]?.formatted_address ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export default function LocationPickerMap({
+  lat,
+  lng,
+  onChange,
+  onAddressResolved,
+}: Props) {
   const [mapsLoadError, setMapsLoadError] = useState(false);
-  const centerKey = `${lat.toFixed(6)}-${lng.toFixed(6)}`;
 
   if (!MAPS_KEY || mapsLoadError) {
     return (
@@ -39,14 +108,32 @@ export default function LocationPickerMap({ lat, lng, onChange }: Props) {
       }}
     >
       <Map
-        key={centerKey}
         defaultZoom={15}
         defaultCenter={{ lat, lng }}
         className="w-full h-full rounded-lg"
         gestureHandling="greedy"
         onClick={(e) => {
           const pos = e.detail?.latLng;
-          if (pos) onChange(pos.lat, pos.lng);
+          if (!pos) {
+            return;
+          }
+
+          const nextLat = toCoordinate((pos as { lat?: unknown }).lat);
+          const nextLng = toCoordinate((pos as { lng?: unknown }).lng);
+
+          if (nextLat == null || nextLng == null) {
+            return;
+          }
+
+          onChange(nextLat, nextLng);
+
+          if (onAddressResolved) {
+            reverseGeocodeWithMaps(nextLat, nextLng).then((resolvedAddress) => {
+              if (resolvedAddress) {
+                onAddressResolved(resolvedAddress);
+              }
+            });
+          }
         }}
       >
         <Marker position={{ lat, lng }} title="Local selecionado" />

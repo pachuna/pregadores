@@ -10,6 +10,7 @@ export interface Revisit {
   address: string;
   latitude: number;
   longitude: number;
+  isActive: boolean;
   notes: string | null;
   visitDate: string;
   createdAt: string;

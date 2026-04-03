@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 interface AuthState {
   accessToken: string | null;
@@ -19,6 +19,10 @@ export const useAuthStore = create<AuthState>()(
         set({ accessToken, refreshToken }),
       logout: () => set({ accessToken: null, refreshToken: null }),
     }),
-    { name: "pregadores-auth" },
+    {
+      name: "pregadores-auth",
+      // Keep auth data only for the browser tab lifetime to reduce exposure.
+      storage: createJSONStorage(() => sessionStorage),
+    },
   ),
 );

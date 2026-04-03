@@ -26,6 +26,7 @@ function NewRevisitContent() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [isActive, setIsActive] = useState(true);
   const [lat, setLat] = useState(-23.5505);
   const [lng, setLng] = useState(-46.6333);
   const [loading, setLoading] = useState(false);
@@ -47,6 +48,7 @@ function NewRevisitContent() {
         address: address.trim(),
         latitude: lat,
         longitude: lng,
+        isActive,
         notes: notes.trim() || undefined,
         visitDate: new Date().toISOString(),
       });
@@ -146,45 +148,80 @@ function NewRevisitContent() {
     }, 700);
   };
 
+  const handleMapPointChange = (newLat: number, newLng: number) => {
+    setLat(newLat);
+    setLng(newLng);
+
+    reverseGeocodeCoordinates({ lat: newLat, lng: newLng })
+      .then((resolvedAddress) => {
+        if (!resolvedAddress) {
+          return;
+        }
+        setAddress(resolvedAddress);
+      })
+      .catch(() => {
+        // Keep current address when reverse geocoding fails.
+      });
+  };
+
   return (
     <div className="mobile-page min-h-screen flex flex-col">
       {/* Header */}
-      <header
-        className="sticky top-0 flex items-center px-4 py-3 shadow-md z-10"
-        style={{ background: "var(--color-primary)" }}
-      >
+      <header className="mobile-header">
         <button
           type="button"
           aria-label="Voltar"
           title="Voltar"
-          className="text-white text-2xl mr-3 leading-none"
+          className="mobile-back-btn"
           onClick={() => router.back()}
         >
           ←
         </button>
-        <h1 className="text-white text-lg font-bold">Nova Revisita</h1>
+        <div>
+          <p className="mobile-header__meta">
+            Cadastro
+          </p>
+          <h1 className="mobile-header__title">Nova Revisita</h1>
+        </div>
       </header>
 
       <div className="mobile-content flex-1 overflow-auto p-4">
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto flex flex-col gap-4">
           {/* Map */}
-          <div className="card p-0 overflow-hidden" style={{ height: 300 }}>
+          <div className="card p-0 overflow-hidden" style={{ height: 320 }}>
             <LocationPickerMap
               lat={lat}
               lng={lng}
-              onChange={(newLat, newLng) => {
-                setLat(newLat);
-                setLng(newLng);
+              onChange={handleMapPointChange}
+              onAddressResolved={(resolvedAddress) => {
+                setAddress(resolvedAddress);
               }}
             />
           </div>
 
-          <p className="text-xs text-center text-[var(--color-text-light)]">
-            📍 {lat.toFixed(6)}, {lng.toFixed(6)} — Toque no mapa para ajustar
-          </p>
+          <div className="surface-note text-center">
+            <p className="text-[11px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-light)]">
+              Coordenadas atuais
+            </p>
+            <p className="text-xs text-[var(--color-text)] mt-1">
+              {lat.toFixed(6)}, {lng.toFixed(6)}
+            </p>
+            <p className="text-[11px] text-[var(--color-text-light)] mt-1">
+              Toque no mapa para ajustar o ponto.
+            </p>
+          </div>
 
           {/* Fields */}
           <div className="card flex flex-col gap-4">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--color-text-light)] font-semibold">
+                Dados da visita
+              </p>
+              <h2 className="text-xl font-bold text-[var(--color-primary-dark)] mt-1">
+                Informacoes da revisita
+              </h2>
+            </div>
+
             <div>
               <label htmlFor="revisit-name" className="input-label">
                 Nome *
@@ -211,6 +248,34 @@ function NewRevisitContent() {
                 onChange={(e) => handleAddressChange(e.target.value)}
                 required
               />
+            </div>
+
+            <div>
+              <label className="input-label">Status da revisita</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                    isActive
+                      ? "border-green-600 bg-green-100 text-green-800"
+                      : "border-[var(--color-border)] bg-white text-[var(--color-text-light)]"
+                  }`}
+                  onClick={() => setIsActive(true)}
+                >
+                  Ativa
+                </button>
+                <button
+                  type="button"
+                  className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                    !isActive
+                      ? "border-slate-500 bg-slate-200 text-slate-700"
+                      : "border-[var(--color-border)] bg-white text-[var(--color-text-light)]"
+                  }`}
+                  onClick={() => setIsActive(false)}
+                >
+                  Inativa
+                </button>
+              </div>
             </div>
 
             <div>

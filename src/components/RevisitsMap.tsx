@@ -17,10 +17,21 @@ interface Props {
 
 const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "";
 
+const ACTIVE_PIN_ICON =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><path fill="#16a34a" d="M12 2C8.13 2 5 5.13 5 9c0 4.58 5.2 11.16 6.37 12.58a1 1 0 0 0 1.26 0C13.8 20.16 19 13.58 19 9c0-3.87-3.13-7-7-7Z"/><circle cx="12" cy="9" r="2.4" fill="#ffffff"/></svg>',
+  );
+
+const INACTIVE_PIN_ICON =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><path fill="#64748b" d="M12 2C8.13 2 5 5.13 5 9c0 4.58 5.2 11.16 6.37 12.58a1 1 0 0 0 1.26 0C13.8 20.16 19 13.58 19 9c0-3.87-3.13-7-7-7Z"/><circle cx="12" cy="9" r="2.4" fill="#ffffff"/></svg>',
+  );
+
 export default function RevisitsMap({ revisits, center, userPos }: Props) {
   const [selected, setSelected] = useState<Revisit | null>(null);
   const [mapsLoadError, setMapsLoadError] = useState(false);
-  const centerKey = `${center.lat.toFixed(6)}-${center.lng.toFixed(6)}`;
 
   // If there is no API key or Google Maps failed to load, show fallback list view
   if (!MAPS_KEY || mapsLoadError) {
@@ -42,7 +53,6 @@ export default function RevisitsMap({ revisits, center, userPos }: Props) {
       }}
     >
       <Map
-        key={centerKey}
         defaultZoom={15}
         defaultCenter={center}
         className="w-full h-full"
@@ -59,6 +69,7 @@ export default function RevisitsMap({ revisits, center, userPos }: Props) {
             key={r.id}
             position={{ lat: r.latitude, lng: r.longitude }}
             title={r.name}
+            icon={r.isActive ? ACTIVE_PIN_ICON : INACTIVE_PIN_ICON}
             onClick={() => setSelected(r)}
           />
         ))}
@@ -72,6 +83,9 @@ export default function RevisitsMap({ revisits, center, userPos }: Props) {
             <div className="p-1">
               <h3 className="font-bold text-sm">{selected.name}</h3>
               <p className="text-xs text-gray-600">{selected.address}</p>
+              <p className="text-xs mt-1">
+                Status: {selected.isActive ? "Ativa" : "Inativa"}
+              </p>
               {selected.notes && (
                 <p className="text-xs mt-1 italic">{selected.notes}</p>
               )}
@@ -124,6 +138,9 @@ function FallbackView({
           {revisits.map((r) => (
             <div key={r.id} className="card">
               <h3 className="font-semibold">{r.name}</h3>
+              <p className="text-xs mt-1">
+                Status: {r.isActive ? "Ativa" : "Inativa"}
+              </p>
               <p className="text-sm text-[var(--color-text-light)]">
                 {r.address}
               </p>
