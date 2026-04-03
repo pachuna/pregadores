@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Merriweather, Source_Sans_3 } from "next/font/google";
 import InstallHomePrompt from "@/components/InstallHomePrompt";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({
@@ -49,6 +50,7 @@ export default function RootLayout({
       >
         {children}
         <InstallHomePrompt />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

@@ -18,6 +18,16 @@ function isIOS() {
   return /iphone|ipad|ipod/.test(ua);
 }
 
+function isIOSSafari() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const ua = window.navigator.userAgent.toLowerCase();
+  // iOS Safari: contém "iphone/ipad" mas NÃO contém "crios" (Chrome iOS) nem "fxios" (Firefox iOS)
+  return /iphone|ipad|ipod/.test(ua) && !/(crios|fxios|opios|mercury)/.test(ua);
+}
+
 function isStandaloneMode() {
   if (typeof window === "undefined") {
     return false;
@@ -34,6 +44,7 @@ export default function InstallHomePrompt() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const iOSDevice = useMemo(() => isIOS(), []);
+  const iOSSafariDevice = useMemo(() => isIOSSafari(), []);
 
   const supportsInstall = useMemo(() => deferredPrompt != null, [deferredPrompt]);
 
@@ -51,8 +62,16 @@ export default function InstallHomePrompt() {
       return;
     }
 
+    // iOS: só mostra no Safari — outros browsers não suportam instalação
+    if (isIOS() && !isIOSSafari()) {
+      return;
+    }
+
     const timer = window.setTimeout(() => {
-      setVisible(true);
+      // iOS Safari não dispara beforeinstallprompt — mostra prompt manual
+      if (isIOSSafari() && !isStandaloneMode()) {
+        setVisible(true);
+      }
     }, 2200);
 
     const onBeforeInstallPrompt = (event: Event) => {
@@ -122,17 +141,17 @@ export default function InstallHomePrompt() {
 
         {!supportsInstall && (
           <p className="text-xs text-[var(--color-text-light)] mt-2">
-            {iOSDevice
-              ? "No iPhone: toque em Compartilhar e depois em Adicionar a Tela de Inicio."
+            {iOSSafariDevice
+              ? "No iPhone: toque em Compartilhar (□↑) e depois em \"Adicionar à Tela de Início\"."
               : "No navegador, use o menu e escolha Adicionar a tela inicial."}
           </p>
         )}
 
-        {iOSDevice && !supportsInstall && (
+        {iOSSafariDevice && !supportsInstall && (
           <ol className="mt-2 space-y-1 text-xs text-[var(--color-text-light)] list-decimal pl-4">
-            <li>Toque no botao Compartilhar do Safari.</li>
-            <li>Role e toque em Adicionar a Tela de Inicio.</li>
-            <li>Confirme em Adicionar no canto superior.</li>
+            <li>Toque no ícone Compartilhar <strong>□↑</strong> na barra do Safari.</li>
+            <li>Role para baixo e toque em <strong>Adicionar à Tela de Início</strong>.</li>
+            <li>Confirme tocando em <strong>Adicionar</strong> no canto superior.</li>
           </ol>
         )}
 
