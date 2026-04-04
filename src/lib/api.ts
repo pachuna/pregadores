@@ -128,6 +128,7 @@ export const revisitsApi = {
       newVisitSummary?: string;
     },
   ) => api.patch<Revisit>(`/api/revisits/${id}`, data),
+  delete: (id: string) => api.delete(`/api/revisits/${id}`),
 };
 
 export interface StatsData {

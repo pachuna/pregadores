@@ -105,3 +105,26 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const auth = await authenticateRequest(request);
+  if (auth instanceof NextResponse) return auth;
+  const userId = auth;
+
+  const { id } = await params;
+
+  const revisit = await prisma.revisit.findFirst({ where: { id, userId } });
+  if (!revisit) {
+    return NextResponse.json({ error: "Revisita não encontrada" }, { status: 404 });
+  }
+
+  try {
+    await prisma.revisit.delete({ where: { id } });
+    return new NextResponse(null, { status: 204 });
+  } catch {
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+  }
+}

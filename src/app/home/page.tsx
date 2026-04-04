@@ -104,6 +104,8 @@ function HomeContent() {
   const [saveError, setSaveError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(
     null,
   );
@@ -304,6 +306,22 @@ function HomeContent() {
 
   const handleCancelClose = () => {
     setShowCloseConfirm(false);
+  };
+
+  const handleDeleteRevisit = async () => {
+    if (!selectedRevisit) return;
+    setIsDeleting(true);
+    try {
+      await revisitsApi.delete(selectedRevisit.id);
+      setRevisits((prev) => prev.filter((r) => r.id !== selectedRevisit.id));
+      setShowDeleteConfirm(false);
+      setSelectedRevisit(null);
+    } catch {
+      setSaveError("Não foi possível apagar a revisita.");
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleQuickRegisterToday = async () => {
@@ -703,6 +721,15 @@ function HomeContent() {
               >
                 {isSaving ? "Registrando..." : "Registrar visita de hoje"}
               </button>
+
+              <button
+                type="button"
+                className="w-full rounded-[10px] border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-100 transition-colors"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isSaving || isDeleting}
+              >
+                Apagar revisita
+              </button>
             </div>
           </section>
         </div>
@@ -752,6 +779,50 @@ function HomeContent() {
                 disabled={isSaving}
               >
                 Continuar editando
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {selectedRevisit && showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[2px] flex items-center justify-center p-4 modal-fade-in">
+          <section className="w-full max-w-sm rounded-2xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-strong)] p-4 modal-pop-in">
+            <div className="mb-3 inline-flex items-center justify-center w-10 h-10 rounded-full bg-red-100 text-red-600">
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+            </div>
+            <p className="text-[11px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-light)]">
+              Confirmar exclusão
+            </p>
+            <h3 className="text-lg font-bold text-[var(--color-primary-dark)] mt-1">
+              Apagar revisita
+            </h3>
+            <p className="text-sm text-[var(--color-text)] mt-2">
+              Tem certeza que deseja apagar <strong>{selectedRevisit.name}</strong>? Esta ação não pode ser desfeita.
+            </p>
+
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                className="w-full rounded-[10px] border border-red-400 bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
+                onClick={handleDeleteRevisit}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Apagando..." : "Sim, apagar"}
+              </button>
+              <button
+                type="button"
+                className="w-full rounded-[10px] border border-[var(--color-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--color-text)]"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+              >
+                Cancelar
               </button>
             </div>
           </section>
