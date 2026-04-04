@@ -34,7 +34,7 @@ cd "$APP_DIR"
 # Validar variaveis obrigatorias
 if [ -f ".env.production" ]; then
   log "Validando variaveis em .env.production..."
-  for key in DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET NEXT_PUBLIC_GOOGLE_CLIENT_ID GOOGLE_CLIENT_ID; do
+  for key in DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET; do
     if ! grep -q "^${key}=" .env.production; then
       fail "variavel ${key} ausente em .env.production"
     fi
