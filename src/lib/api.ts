@@ -199,6 +199,18 @@ export interface Congregation {
   updatedAt: string;
 }
 
+export type PushTarget = "ALL" | "ADMIN" | "ANCIAO" | "PUBLICADOR" | "congregation";
+
+export const pushApi = {
+  send: (data: {
+    title: string;
+    body: string;
+    url?: string;
+    target: PushTarget;
+    congregationId?: string;
+  }) => api.post<{ ok: boolean }>("/api/push/send", data),
+};
+
 export const congregationsApi = {
   list: () => api.get<Congregation[]>("/api/congregations"),
   getMine: () => api.get<Congregation | null>("/api/congregations"),

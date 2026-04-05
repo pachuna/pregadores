@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { adminApi, type AdminUser } from "@/lib/api";
+import { adminApi, congregationsApi, pushApi, type AdminUser, type Congregation, type PushTarget } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import AuthGuard from "@/components/AuthGuard";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -137,6 +137,190 @@ function ConfirmDialog({
   );
 }
 
+const PUSH_TARGET_LABELS: Record<PushTarget, string> = {
+  ALL: "Todos os usuários",
+  ADMIN: "Apenas Administradores",
+  ANCIAO: "Apenas Anciões",
+  PUBLICADOR: "Apenas Publicadores",
+  congregation: "Congregação específica",
+};
+
+function SendPushModal({ onClose }: { onClose: () => void }) {
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [url, setUrl] = useState("");
+  const [target, setTarget] = useState<PushTarget>("ALL");
+  const [congregationId, setCongregationId] = useState("");
+  const [congregations, setCongregations] = useState<Congregation[]>([]);
+  const [loadingCongregations, setLoadingCongregations] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (target === "congregation") {
+      setLoadingCongregations(true);
+      congregationsApi
+        .list()
+        .then(({ data }) => {
+          const active = data.filter((c) => c.status === "ACTIVE");
+          setCongregations(active);
+          if (active.length > 0) setCongregationId(active[0].id);
+        })
+        .catch(() => setError("Erro ao carregar congregações."))
+        .finally(() => setLoadingCongregations(false));
+    }
+  }, [target]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSending(true);
+    try {
+      await pushApi.send({
+        title: title.trim(),
+        body: body.trim(),
+        ...(url.trim() ? { url: url.trim() } : {}),
+        target,
+        ...(target === "congregation" ? { congregationId } : {}),
+      });
+      setSent(true);
+    } catch {
+      setError("Erro ao enviar notificação. Tente novamente.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.45)" }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="card w-full max-w-md">
+        <div className="flex items-center gap-3 mb-5">
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+            style={{ background: "var(--color-primary)", color: "#fff" }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5" aria-hidden="true">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--color-text)]">Enviar Notificação</h2>
+            <p className="text-xs text-[var(--color-text-light)]">Push para usuários selecionados</p>
+          </div>
+        </div>
+
+        {sent ? (
+          <div className="text-center py-6">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: "#dcfce7" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" className="w-7 h-7" aria-hidden="true">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </div>
+            <p className="font-semibold text-[var(--color-text)] mb-1">Notificação enviada!</p>
+            <p className="text-sm text-[var(--color-text-light)] mb-5">{PUSH_TARGET_LABELS[target]}</p>
+            <button type="button" onClick={onClose} className="btn-primary w-full">Fechar</button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div>
+              <label className="input-label" htmlFor="push-title">Título</label>
+              <input
+                id="push-title"
+                className="input mt-1"
+                placeholder="Ex: Aviso importante"
+                value={title}
+                maxLength={100}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="input-label" htmlFor="push-body">Mensagem</label>
+              <textarea
+                id="push-body"
+                className="input mt-1 resize-none"
+                rows={3}
+                placeholder="Conteúdo da notificação..."
+                value={body}
+                maxLength={300}
+                onChange={(e) => setBody(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="input-label" htmlFor="push-url">Link ao clicar <span className="text-[var(--color-text-light)] font-normal">(opcional)</span></label>
+              <input
+                id="push-url"
+                className="input mt-1"
+                placeholder="https://..."
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                type="url"
+              />
+            </div>
+
+            <div>
+              <label className="input-label" htmlFor="push-target">Destinatários</label>
+              <select
+                id="push-target"
+                className="input mt-1"
+                value={target}
+                onChange={(e) => setTarget(e.target.value as PushTarget)}
+              >
+                {(Object.keys(PUSH_TARGET_LABELS) as PushTarget[]).map((t) => (
+                  <option key={t} value={t}>{PUSH_TARGET_LABELS[t]}</option>
+                ))}
+              </select>
+            </div>
+
+            {target === "congregation" && (
+              <div>
+                <label className="input-label" htmlFor="push-cong">Congregação</label>
+                {loadingCongregations ? (
+                  <p className="text-sm text-[var(--color-text-light)] mt-1">Carregando...</p>
+                ) : congregations.length === 0 ? (
+                  <p className="text-sm text-[var(--color-text-light)] mt-1">Nenhuma congregação ativa.</p>
+                ) : (
+                  <select
+                    id="push-cong"
+                    className="input mt-1"
+                    value={congregationId}
+                    onChange={(e) => setCongregationId(e.target.value)}
+                    required
+                  >
+                    {congregations.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name} — {c.city}/{c.state}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
+
+            {error && (
+              <p className="text-sm text-[var(--color-danger)] text-center">{error}</p>
+            )}
+
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={onClose} className="btn-secondary flex-1" disabled={sending}>Cancelar</button>
+              <button type="submit" className="btn-primary flex-1" disabled={sending || (target === "congregation" && !congregationId)}>
+                {sending ? "Enviando..." : "Enviar"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AdminContent() {
   const role = useAuthStore((s) => s.role);
   const router = useRouter();
@@ -146,6 +330,7 @@ function AdminContent() {
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; user: AdminUser } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showPushModal, setShowPushModal] = useState(false);
 
   useEffect(() => {
     if (role && role !== "ADMIN") router.replace("/home");
@@ -217,19 +402,52 @@ function AdminContent() {
 
       <div className="px-4 pt-5">
         {/* Quick links */}
-        <Link
-          href="/admin/congregations"
-          className="flex items-center justify-between p-4 rounded-2xl border mb-5"
-          style={{ borderColor: "var(--color-border)", background: "var(--color-surface-alt, #f8fafc)" }}
-        >
-          <div>
-            <p className="font-semibold text-sm text-[var(--color-text)]">Congregações</p>
-            <p className="text-xs text-[var(--color-text-light)] mt-0.5">Aprovar e gerenciar congregações</p>
-          </div>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-[var(--color-primary)]" aria-hidden="true">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </Link>
+        <div className="flex flex-col gap-3 mb-5">
+          <Link
+            href="/admin/congregations"
+            className="flex items-center justify-between p-4 rounded-2xl border"
+            style={{ borderColor: "var(--color-border)", background: "var(--color-surface-alt, #f8fafc)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "var(--color-primary-light, #e8eef7)" }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-[var(--color-text)]">Congregações</p>
+                <p className="text-xs text-[var(--color-text-light)] mt-0.5">Aprovar e gerenciar congregações</p>
+              </div>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-[var(--color-primary)]" aria-hidden="true">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setShowPushModal(true)}
+            className="flex items-center justify-between p-4 rounded-2xl border w-full text-left"
+            style={{ borderColor: "var(--color-border)", background: "var(--color-surface-alt, #f8fafc)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "#fef3c7" }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-[var(--color-text)]">Enviar Notificação</p>
+                <p className="text-xs text-[var(--color-text-light)] mt-0.5">Push para usuários ou congregações</p>
+              </div>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-[var(--color-primary)]" aria-hidden="true">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
+        </div>
 
         {/* Stats bar */}
         <div className="grid grid-cols-3 gap-3 mb-6">
@@ -319,6 +537,8 @@ function AdminContent() {
       {editingUser && (
         <EditModal user={editingUser} onClose={() => setEditingUser(null)} onSave={handleSaveEdit} />
       )}
+
+      {showPushModal && <SendPushModal onClose={() => setShowPushModal(false)} />}
 
       {confirmAction && (
         <ConfirmDialog
