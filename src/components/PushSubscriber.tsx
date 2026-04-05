@@ -35,8 +35,22 @@ export default function PushSubscriber() {
         const registration = await navigator.serviceWorker.ready;
         const existing = await registration.pushManager.getSubscription();
 
+        // Se existe subscription com key diferente da atual, recria
+        if (existing) {
+          const existingKey = existing.options?.applicationServerKey;
+          const currentKey = urlBase64ToUint8Array(VAPID_PUBLIC);
+          const existingB64 = existingKey
+            ? btoa(String.fromCharCode(...new Uint8Array(existingKey as ArrayBuffer)))
+            : null;
+          const currentB64 = btoa(String.fromCharCode(...currentKey));
+          if (existingB64 !== currentB64) {
+            await existing.unsubscribe();
+          }
+        }
+
+        const fresh = await registration.pushManager.getSubscription();
         const subscription =
-          existing ??
+          fresh ??
           (await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
