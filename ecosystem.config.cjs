@@ -13,7 +13,8 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: "3000",
-        HOSTNAME: "127.0.0.1"
+        HOSTNAME: "127.0.0.1",
+        NODE_OPTIONS: "--dns-result-order=ipv4first"
       }
     }
   ]

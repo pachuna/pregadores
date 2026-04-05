@@ -30,6 +30,28 @@ export async function notifyByRole(
 }
 
 /**
+ * Envia push notification para todos os membros de uma congregação específica.
+ */
+export async function notifyByCongregation(
+  congregationId: string,
+  payload: PushPayload
+): Promise<void> {
+  const subs = await prisma.pushSubscription.findMany({
+    where: { user: { congregationId } },
+  });
+
+  await sendToSubscriptions(subs, payload);
+}
+
+/**
+ * Envia push notification para todos os usuários (todas as roles).
+ */
+export async function notifyAll(payload: PushPayload): Promise<void> {
+  const subs = await prisma.pushSubscription.findMany();
+  await sendToSubscriptions(subs, payload);
+}
+
+/**
  * Envia push notification para um usuário específico.
  */
 export async function notifyUser(
