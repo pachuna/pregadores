@@ -1,4 +1,4 @@
-const CACHE_NAME = "pregadores-v2";
+const CACHE_NAME = "pregadores-v3";
 const STATIC_ASSETS = ["/", "/login", "/manifest.json", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"];
 
 self.addEventListener("install", (event) => {
@@ -52,7 +52,7 @@ self.addEventListener("push", (event) => {
     self.registration.showNotification(payload.title, {
       body: payload.body,
       icon: "/icon-192.png",
-      badge: "/icon-192.png",
+      badge: "/badge-96.png",
       data: { url: payload.url || "/" },
       vibrate: [200, 100, 200],
     })
