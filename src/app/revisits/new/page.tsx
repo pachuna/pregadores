@@ -6,7 +6,7 @@ import { revisitsApi } from "@/lib/api";
 import AuthGuard from "@/components/AuthGuard";
 import LocationPickerMap from "@/components/LocationPickerMap";
 import MobileBottomNav from "@/components/MobileBottomNav";
-import { geocodeAddress, reverseGeocodeCoordinates } from "@/lib/geocoding";
+import { geocodeAddress, reverseGeocodeCoordinates, getPlaceAutocompleteSuggestions, getPlaceLocation, type PlaceAutocompleteSuggestion } from "@/lib/geocoding";
 import {
   getLastKnownLocation,
   LOCATION_CACHE_MAX_AGE_MS,
@@ -31,8 +31,10 @@ function NewRevisitContent() {
   const [lng, setLng] = useState(-46.6333);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const skipNextReverseRef = useRef(false);
+  const skipNextReverseRef = useRef(0);
   const addressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [suggestions, setSuggestions] = useState<PlaceAutocompleteSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,8 +92,8 @@ function NewRevisitContent() {
   useEffect(() => {
     let active = true;
 
-    if (skipNextReverseRef.current) {
-      skipNextReverseRef.current = false;
+    if (skipNextReverseRef.current > 0) {
+      skipNextReverseRef.current -= 1;
       return;
     }
 
@@ -122,30 +124,60 @@ function NewRevisitContent() {
 
   const handleAddressChange = (value: string) => {
     setAddress(value);
+    setShowSuggestions(false);
 
     if (addressDebounceRef.current) {
       clearTimeout(addressDebounceRef.current);
     }
 
-    if (!value.trim() || value.trim().length < 5) {
+    if (!value.trim() || value.trim().length < 3) {
+      setSuggestions([]);
       return;
     }
 
     addressDebounceRef.current = setTimeout(() => {
-      geocodeAddress(value.trim())
-        .then((coords) => {
-          if (!coords) {
-            return;
+      getPlaceAutocompleteSuggestions(value.trim())
+        .then((results) => {
+          if (results.length > 0) {
+            setSuggestions(results);
+            setShowSuggestions(true);
+          } else {
+            setSuggestions([]);
+            // Fallback: geocode direto e move o pin
+            return geocodeAddress(value.trim()).then((coords) => {
+              if (!coords) return;
+              skipNextReverseRef.current = 2;
+              setLat(coords.lat);
+              setLng(coords.lng);
+            });
           }
-
-          skipNextReverseRef.current = true;
-          setLat(coords.lat);
-          setLng(coords.lng);
         })
-        .catch(() => {
-          // Keep typed address when geocoding fails.
-        });
-    }, 700);
+        .catch(() => {});
+    }, 400);
+  };
+
+  const handleSuggestionSelect = async (suggestion: PlaceAutocompleteSuggestion) => {
+    // Cancela debounce pendente para evitar que o autocomplete sobrescreva o estado
+    if (addressDebounceRef.current) {
+      clearTimeout(addressDebounceRef.current);
+      addressDebounceRef.current = null;
+    }
+
+    setAddress(suggestion.description);
+    setShowSuggestions(false);
+    setSuggestions([]);
+
+    // Tenta Places API (New) primeiro; se falhar, faz geocode pelo texto do endereço
+    let coords = await getPlaceLocation(suggestion.placeId);
+    if (!coords) {
+      coords = await geocodeAddress(suggestion.description);
+    }
+
+    if (coords) {
+      skipNextReverseRef.current = 2;
+      setLat(coords.lat);
+      setLng(coords.lng);
+    }
   };
 
   const handleMapPointChange = (newLat: number, newLng: number) => {
@@ -236,7 +268,7 @@ function NewRevisitContent() {
               />
             </div>
 
-            <div>
+            <div className="relative">
               <label htmlFor="revisit-address" className="input-label">
                 Endereço *
               </label>
@@ -245,9 +277,30 @@ function NewRevisitContent() {
                 className="input-field"
                 placeholder="Rua, número, bairro"
                 value={address}
+                autoComplete="off"
                 onChange={(e) => handleAddressChange(e.target.value)}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                 required
               />
+              {showSuggestions && suggestions.length > 0 && (
+                <ul className="absolute z-50 w-full bg-white border border-[var(--color-border)] rounded-lg shadow-lg mt-1 overflow-hidden">
+                  {suggestions.map((s) => (
+                    <li
+                      key={s.placeId}
+                      className="px-3 py-2 cursor-pointer hover:bg-[var(--color-surface)] border-b last:border-b-0 border-[var(--color-border)]"
+                      onMouseDown={() => handleSuggestionSelect(s)}
+                    >
+                      <p className="text-sm font-medium text-[var(--color-text)] leading-tight">
+                        {s.mainText}
+                      </p>
+                      <p className="text-xs text-[var(--color-text-light)] leading-tight mt-0.5">
+                        {s.secondaryText}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div>
