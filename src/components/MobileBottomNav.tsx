@@ -2,18 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 
 type NavItem = {
   href: string;
   label: string;
-  icon: "map" | "pin" | "plus";
+  icon: "map" | "pin" | "plus" | "admin" | "congregation";
   accent?: boolean;
+  adminOnly?: boolean;
+  hideForAdmin?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/home", label: "Mapa", icon: "map" },
   { href: "/revisits/nearby", label: "Próximas", icon: "pin" },
   { href: "/revisits/new", label: "Nova", icon: "plus", accent: true },
+  { href: "/congregations", label: "Congregação", icon: "congregation", hideForAdmin: true },
+  { href: "/admin", label: "Admin", icon: "admin", adminOnly: true },
 ];
 
 function NavIcon({ type }: { type: NavItem["icon"] }) {
@@ -36,6 +41,26 @@ function NavIcon({ type }: { type: NavItem["icon"] }) {
     );
   }
 
+  if (type === "congregation") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <path d="M3 9.5L12 4l9 5.5V20H3V9.5Z" />
+        <path d="M9 20v-6h6v6" />
+        <path d="M12 4v3" />
+      </svg>
+    );
+  }
+
+  if (type === "admin") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+        <path d="M16 11l1.5 1.5L20 10" />
+      </svg>
+    );
+  }
+
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path d="M12 5V19" />
@@ -46,11 +71,18 @@ function NavIcon({ type }: { type: NavItem["icon"] }) {
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
+  const role = useAuthStore((s) => s.role);
+
+  const visibleItems = NAV_ITEMS.filter((item) => {
+    if (item.adminOnly && role !== "ADMIN") return false;
+    if (item.hideForAdmin && role === "ADMIN") return false;
+    return true;
+  });
 
   return (
     <nav className="mobile-nav" aria-label="Navegação principal">
-      {NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.href;
+      {visibleItems.map((item) => {
+        const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
         return (
           <Link
             key={item.href}

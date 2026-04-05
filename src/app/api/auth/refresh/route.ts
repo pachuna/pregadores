@@ -34,8 +34,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const tokens = await generateTokenPair(user.id);
-    return NextResponse.json(tokens);
+    if (user.isBlocked) {
+      return NextResponse.json(
+        { error: "Conta bloqueada" },
+        { status: 403 }
+      );
+    }
+
+    const tokens = await generateTokenPair(user.id, user.role);
+    return NextResponse.json({ ...tokens, role: user.role });
   } catch {
     return NextResponse.json(
       { error: "Erro interno do servidor" },

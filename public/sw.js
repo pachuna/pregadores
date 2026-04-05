@@ -1,4 +1,4 @@
-const CACHE_NAME = "pregadores-v1";
+const CACHE_NAME = "pregadores-v2";
 const STATIC_ASSETS = ["/", "/login", "/manifest.json", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"];
 
 self.addEventListener("install", (event) => {
@@ -19,12 +19,10 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Ignora requisições não-GET e chamadas de API
   if (request.method !== "GET" || url.pathname.startsWith("/api/")) {
     return;
   }
 
-  // Estratégia: network first, fallback para cache
   event.respondWith(
     fetch(request)
       .then((response) => {
@@ -37,3 +35,43 @@ self.addEventListener("fetch", (event) => {
       .catch(() => caches.match(request))
   );
 });
+
+// ── Push Notifications ────────────────────────────────────────────────────────
+
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  let payload = { title: "Pregadores", body: "", url: "/" };
+  try {
+    payload = { ...payload, ...event.data.json() };
+  } catch {
+    payload.body = event.data.text();
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      data: { url: payload.url || "/" },
+      vibrate: [200, 100, 200],
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || "/";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && "focus" in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
+});
+

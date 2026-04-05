@@ -5,7 +5,7 @@ import { authenticateRequest } from "@/lib/auth-middleware";
 export async function GET(request: NextRequest) {
   const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
-  const userId = auth;
+  const { userId } = auth;
 
   const revisits = await prisma.revisit.findMany({
     where: { userId },
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
-  const userId = auth;
+  const { userId } = auth;
 
   try {
     const body = await request.json();

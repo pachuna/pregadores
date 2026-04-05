@@ -27,7 +27,7 @@ function toRad(deg: number): number {
 export async function GET(request: NextRequest) {
   const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
-  const userId = auth;
+  const { userId } = auth;
 
   const { searchParams } = new URL(request.url);
   const latStr = searchParams.get("latitude");

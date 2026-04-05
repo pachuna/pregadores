@@ -20,7 +20,7 @@ export async function PATCH(
 ) {
   const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
-  const userId = auth;
+  const { userId } = auth;
 
   const { id } = await params;
 
@@ -112,7 +112,7 @@ export async function DELETE(
 ) {
   const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
-  const userId = auth;
+  const { userId } = auth;
 
   const { id } = await params;
 

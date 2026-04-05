@@ -64,7 +64,7 @@ api.interceptors.response.use(
         refreshPromise = api
           .post<AuthTokens>("/api/auth/refresh", { refreshToken })
           .then(({ data }) => {
-            setTokens(data.accessToken, data.refreshToken);
+            setTokens(data.accessToken, data.refreshToken, data.role);
             return data;
           })
           .catch(() => {
@@ -146,3 +146,78 @@ export const statsApi = {
 export const presenceApi = {
   ping: () => api.post("/api/presence"),
 };
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  role: "ADMIN" | "ANCIAO" | "PUBLICADOR";
+  congregationId: string | null;
+  isBlocked: boolean;
+  lastSeenAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count: { revisits: number };
+}
+
+export const adminApi = {
+  listUsers: () => api.get<AdminUser[]>("/api/admin/users"),
+  updateUser: (
+    id: string,
+    data: {
+      role?: "ADMIN" | "ANCIAO" | "PUBLICADOR";
+      congregationId?: string | null;
+      isBlocked?: boolean;
+    }
+  ) => api.patch<Omit<AdminUser, "_count">>(`/api/admin/users/${id}`, data),
+  deleteUser: (id: string) => api.delete(`/api/admin/users/${id}`),
+};
+
+// ── Congregações ─────────────────────────────────────────────────────────────
+
+export interface CongregationMember {
+  id: string;
+  email: string;
+  role: "ADMIN" | "ANCIAO" | "PUBLICADOR";
+  isBlocked: boolean;
+  lastSeenAt: string | null;
+  createdAt: string;
+  _count: { revisits: number };
+}
+
+export interface Congregation {
+  id: string;
+  name: string;
+  jwEmail: string;
+  state: string;
+  city: string;
+  status: "PENDING" | "ACTIVE" | "BLOCKED";
+  createdById: string;
+  createdBy?: { id: string; email: string };
+  members?: CongregationMember[];
+  _count?: { members: number };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const congregationsApi = {
+  list: () => api.get<Congregation[]>("/api/congregations"),
+  getMine: () => api.get<Congregation | null>("/api/congregations"),
+  getById: (id: string) => api.get<Congregation>(`/api/congregations/${id}`),
+  create: (data: { name: string; jwEmail: string; state: string; city: string }) =>
+    api.post<Congregation>("/api/congregations", data),
+  update: (
+    id: string,
+    data: { name?: string; jwEmail?: string; state?: string; city?: string; status?: string }
+  ) => api.patch<Congregation>(`/api/congregations/${id}`, data),
+  addMember: (congregationId: string, userId: string, role?: "ANCIAO" | "PUBLICADOR") =>
+    api.post(`/api/congregations/${congregationId}/members`, { userId, role }),
+  updateMember: (
+    congregationId: string,
+    data: { userId: string; isBlocked?: boolean; role?: "ANCIAO" | "PUBLICADOR" }
+  ) => api.patch(`/api/congregations/${congregationId}/members`, data),
+  removeMember: (congregationId: string, userId: string) =>
+    api.delete(`/api/congregations/${congregationId}/members`, { data: { userId } }),
+};
+
+export default api;
+

@@ -43,7 +43,6 @@ export default function InstallHomePrompt() {
   const [visible, setVisible] = useState(false);
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
-  const iOSDevice = useMemo(() => isIOS(), []);
   const iOSSafariDevice = useMemo(() => isIOSSafari(), []);
 
   const supportsInstall = useMemo(() => deferredPrompt != null, [deferredPrompt]);

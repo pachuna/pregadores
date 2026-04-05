@@ -27,7 +27,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     authApi
       .refresh(refreshToken)
       .then(({ data }) => {
-        setTokens(data.accessToken, data.refreshToken);
+        setTokens(data.accessToken, data.refreshToken, data.role);
       })
       .catch(() => {
         logout();

@@ -24,8 +24,11 @@ const JWT_REFRESH_SECRET = new TextEncoder().encode(
 const ACCESS_TOKEN_EXPIRY = "15m";
 const REFRESH_TOKEN_EXPIRY = "7d";
 
-export async function signAccessToken(userId: string): Promise<string> {
-  return new SignJWT({ sub: userId })
+export async function signAccessToken(
+  userId: string,
+  role: string
+): Promise<string> {
+  return new SignJWT({ sub: userId, role })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(ACCESS_TOKEN_EXPIRY)
@@ -42,10 +45,10 @@ export async function signRefreshToken(userId: string): Promise<string> {
 
 export async function verifyAccessToken(
   token: string
-): Promise<{ sub: string } | null> {
+): Promise<{ sub: string; role?: string } | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload as { sub: string };
+    return payload as { sub: string; role?: string };
   } catch {
     return null;
   }
@@ -62,9 +65,9 @@ export async function verifyRefreshToken(
   }
 }
 
-export async function generateTokenPair(userId: string) {
+export async function generateTokenPair(userId: string, role: string) {
   const [accessToken, refreshToken] = await Promise.all([
-    signAccessToken(userId),
+    signAccessToken(userId, role),
     signRefreshToken(userId),
   ]);
   return { accessToken, refreshToken };

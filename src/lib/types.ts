@@ -1,6 +1,7 @@
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
+  role?: string;
 }
 
 export interface Revisit {

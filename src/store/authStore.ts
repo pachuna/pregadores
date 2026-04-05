@@ -6,7 +6,8 @@ import { createJSONStorage, persist } from "zustand/middleware";
 interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
-  setTokens: (accessToken: string, refreshToken: string) => void;
+  role: string | null;
+  setTokens: (accessToken: string, refreshToken: string, role?: string) => void;
   logout: () => void;
 }
 
@@ -15,9 +16,10 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       accessToken: null,
       refreshToken: null,
-      setTokens: (accessToken, refreshToken) =>
-        set({ accessToken, refreshToken }),
-      logout: () => set({ accessToken: null, refreshToken: null }),
+      role: null,
+      setTokens: (accessToken, refreshToken, role) =>
+        set({ accessToken, refreshToken, role: role ?? null }),
+      logout: () => set({ accessToken: null, refreshToken: null, role: null }),
     }),
     {
       name: "pregadores-auth",

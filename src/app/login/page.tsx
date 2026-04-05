@@ -104,7 +104,7 @@ export default function LoginPage() {
           setGoogleLoading(true);
           try {
             const { data } = await authApi.google(credential);
-            setTokens(data.accessToken, data.refreshToken);
+            setTokens(data.accessToken, data.refreshToken, data.role);
             router.replace("/home");
           } catch (err: unknown) {
             const message =
@@ -166,7 +166,7 @@ export default function LoginPage() {
     setRegisterLoading(true);
     try {
       const { data } = await authApi.register(email.trim(), password);
-      setTokens(data.accessToken, data.refreshToken);
+      setTokens(data.accessToken, data.refreshToken, data.role);
       router.replace("/home");
     } catch (err: unknown) {
       const message =

@@ -149,7 +149,7 @@ h4 {
   bottom: calc(0.5rem + env(safe-area-inset-bottom));
   z-index: 30;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.5rem;
   padding: 0.5rem;
   border: 1px solid rgba(74, 109, 167, 0.2);

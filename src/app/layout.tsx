@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import InstallHomePrompt from "@/components/InstallHomePrompt";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import PushSubscriber from "@/components/PushSubscriber";
 import "@fontsource/merriweather/400.css";
 import "@fontsource/merriweather/700.css";
 import "@fontsource/merriweather/900.css";
@@ -43,6 +44,7 @@ export default function RootLayout({
         {children}
         <InstallHomePrompt />
         <ServiceWorkerRegister />
+        <PushSubscriber />
       </body>
     </html>
   );
