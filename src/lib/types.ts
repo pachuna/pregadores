@@ -18,3 +18,17 @@ export interface Revisit {
   updatedAt: string;
   distanceKm?: number;
 }
+
+export interface PioneerReport {
+  id: string;
+  userId: string;
+  date: string;        // "YYYY-MM-DD"
+  hours: number;
+  minutes: number;
+  creditHours: number;
+  bibleStudies: number;
+  goalHours: number;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -7,7 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 type NavItem = {
   href: string;
   label: string;
-  icon: "map" | "pin" | "plus" | "admin" | "congregation";
+  icon: "map" | "pin" | "plus" | "admin" | "congregation" | "timer";
   accent?: boolean;
   adminOnly?: boolean;
   hideForAdmin?: boolean;
@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/home", label: "Mapa", icon: "map" },
   { href: "/revisits/nearby", label: "Próximas", icon: "pin" },
   { href: "/revisits/new", label: "Nova", icon: "plus", accent: true },
+  { href: "/pioneiro", label: "Pioneiro", icon: "timer" },
   { href: "/congregations", label: "Congregação", icon: "congregation", hideForAdmin: true },
   { href: "/admin", label: "Admin", icon: "admin", adminOnly: true },
 ];
@@ -37,6 +38,17 @@ function NavIcon({ type }: { type: NavItem["icon"] }) {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <path d="M12 21C12 21 19 14.4 19 9A7 7 0 1 0 5 9C5 14.4 12 21 12 21Z" />
         <circle cx="12" cy="9" r="2.5" />
+      </svg>
+    );
+  }
+
+  if (type === "timer") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <circle cx="12" cy="13" r="8" />
+        <path d="M12 9v4l2.5 2.5" />
+        <path d="M9.5 2.5h5" />
+        <path d="M12 2.5V5" />
       </svg>
     );
   }

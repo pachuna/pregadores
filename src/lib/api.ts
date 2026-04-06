@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useAuthStore } from "@/store/authStore";
-import type { AuthTokens, Revisit } from "./types";
+import type { AuthTokens, Revisit, PioneerReport } from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL?.trim() || "";
 
@@ -209,6 +209,22 @@ export const pushApi = {
     target: PushTarget;
     congregationId?: string;
   }) => api.post<{ ok: boolean }>("/api/push/send", data),
+};
+
+export { type PioneerReport };
+
+export const pioneerApi = {
+  list: (year: number, month: number) =>
+    api.get<PioneerReport[]>("/api/pioneer", { params: { year, month } }),
+  upsert: (data: {
+    date: string;
+    hours: number;
+    minutes: number;
+    creditHours: number;
+    bibleStudies: number;
+    goalHours: number;
+    notes: string;
+  }) => api.post<PioneerReport>("/api/pioneer", data),
 };
 
 export const congregationsApi = {
