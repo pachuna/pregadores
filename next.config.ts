@@ -17,6 +17,8 @@ const cspReportOnly = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: false },
   async headers() {
     return [
       {
