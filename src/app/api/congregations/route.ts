@@ -33,7 +33,22 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  return NextResponse.json(user?.congregation ?? null);
+  // Se já é membro de uma congregação, retorna ela
+  if (user?.congregation) {
+    return NextResponse.json(user.congregation);
+  }
+
+  // Se não é membro, verifica se criou uma congregação em análise ou recusada
+  const created = await prisma.congregation.findFirst({
+    where: {
+      createdById: auth.userId,
+      status: { in: ["PENDING", "REJECTED"] },
+    },
+    include: { _count: { select: { members: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return NextResponse.json(created ?? null);
 }
 
 /**

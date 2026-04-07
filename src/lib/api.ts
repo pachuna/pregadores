@@ -190,11 +190,12 @@ export interface Congregation {
   jwEmail: string;
   state: string;
   city: string;
-  status: "PENDING" | "ACTIVE" | "BLOCKED";
+  status: "PENDING" | "ACTIVE" | "BLOCKED" | "REJECTED";
   createdById: string;
   createdBy?: { id: string; email: string };
   members?: CongregationMember[];
   _count?: { members: number };
+  rejectionReason?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -235,7 +236,7 @@ export const congregationsApi = {
     api.post<Congregation>("/api/congregations", data),
   update: (
     id: string,
-    data: { name?: string; jwEmail?: string; state?: string; city?: string; status?: string }
+    data: { name?: string; jwEmail?: string; state?: string; city?: string; status?: string; rejectionReason?: string }
   ) => api.patch<Congregation>(`/api/congregations/${id}`, data),
   addMember: (congregationId: string, userId: string, role?: "ANCIAO" | "PUBLICADOR") =>
     api.post(`/api/congregations/${congregationId}/members`, { userId, role }),

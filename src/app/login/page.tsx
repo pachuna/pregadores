@@ -35,7 +35,9 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() || "";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showCreateAccount, setShowCreateAccount] = useState(false);
+  const [emailTab, setEmailTab] = useState<"login" | "register">("login");
+  const [showEmailSection, setShowEmailSection] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
@@ -160,6 +162,28 @@ export default function LoginPage() {
     };
   }, [router, setTokens]);
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoginLoading(true);
+    try {
+      const { data } = await authApi.login(email.trim(), password);
+      setTokens(data.accessToken, data.refreshToken, data.role);
+      router.replace("/home");
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
+          ? (err as { response: { data: { error: string } } }).response.data.error
+          : "Email ou senha incorretos.";
+      setError(message);
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -233,55 +257,113 @@ export default function LoginPage() {
           </div>
 
           <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-alt)]/60 p-3">
-            <p className="text-sm text-center font-medium text-[var(--color-text)]">
-              Prefere criar conta com email?
-            </p>
             <button
               type="button"
-              className="btn-secondary w-full mt-3"
-              onClick={() => setShowCreateAccount((prev) => !prev)}
+              className="btn-secondary w-full"
+              onClick={() => { setShowEmailSection((prev) => !prev); setError(""); }}
             >
-              {showCreateAccount ? "Ocultar criacao por email" : "Criar conta com email e senha"}
+              {showEmailSection ? "Ocultar acesso por email" : "Entrar com email e senha"}
             </button>
 
-            {showCreateAccount && (
-              <form onSubmit={handleCreateAccount} className="mt-4 flex flex-col gap-3">
-                <div>
-                  <label htmlFor="email" className="input-label">
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    className="input-field"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="password" className="input-label">
-                    Senha
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    className="input-field"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                  />
+            {showEmailSection && (
+              <div className="mt-4">
+                {/* Abas Login / Criar Conta */}
+                <div className="flex rounded-xl overflow-hidden border border-[var(--color-border)] mb-4">
+                  <button
+                    type="button"
+                    onClick={() => { setEmailTab("login"); setError(""); }}
+                    className={`flex-1 py-2 text-sm font-semibold transition-colors ${
+                      emailTab === "login"
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-transparent text-[var(--color-text-light)] hover:bg-[var(--color-border)]"
+                    }`}
+                  >
+                    Entrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setEmailTab("register"); setError(""); }}
+                    className={`flex-1 py-2 text-sm font-semibold transition-colors ${
+                      emailTab === "register"
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-transparent text-[var(--color-text-light)] hover:bg-[var(--color-border)]"
+                    }`}
+                  >
+                    Criar conta
+                  </button>
                 </div>
 
-                <button type="submit" className="btn-primary" disabled={registerLoading}>
-                  {registerLoading ? "Criando conta..." : "Criar conta"}
-                </button>
-              </form>
+                {/* Formulário Login */}
+                {emailTab === "login" && (
+                  <form onSubmit={handleLogin} className="flex flex-col gap-3">
+                    <div>
+                      <label htmlFor="login-email" className="input-label">Email</label>
+                      <input
+                        id="login-email"
+                        type="email"
+                        className="input-field"
+                        placeholder="seu@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        autoComplete="email"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="login-password" className="input-label">Senha</label>
+                      <input
+                        id="login-password"
+                        type="password"
+                        className="input-field"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        autoComplete="current-password"
+                      />
+                    </div>
+                    <button type="submit" className="btn-primary" disabled={loginLoading}>
+                      {loginLoading ? "Entrando..." : "Entrar"}
+                    </button>
+                  </form>
+                )}
+
+                {/* Formulário Criar Conta */}
+                {emailTab === "register" && (
+                  <form onSubmit={handleCreateAccount} className="flex flex-col gap-3">
+                    <div>
+                      <label htmlFor="register-email" className="input-label">Email</label>
+                      <input
+                        id="register-email"
+                        type="email"
+                        className="input-field"
+                        placeholder="seu@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        autoComplete="email"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="register-password" className="input-label">Senha</label>
+                      <input
+                        id="register-password"
+                        type="password"
+                        className="input-field"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        autoComplete="new-password"
+                      />
+                    </div>
+                    <button type="submit" className="btn-primary" disabled={registerLoading}>
+                      {registerLoading ? "Criando conta..." : "Criar conta"}
+                    </button>
+                  </form>
+                )}
+              </div>
             )}
           </div>
         </div>

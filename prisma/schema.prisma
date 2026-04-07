@@ -17,6 +17,7 @@ enum CongregationStatus {
   PENDING
   ACTIVE
   BLOCKED
+  REJECTED
 }
 
 model Congregation {
@@ -26,6 +27,7 @@ model Congregation {
   state       String             // UF, ex: "SP"
   city        String
   status      CongregationStatus @default(PENDING)
+  rejectionReason String?
   createdById String
   createdBy   User               @relation("CongregationCreatedBy", fields: [createdById], references: [id])
   members     User[]             @relation("CongregationMembers")

@@ -119,6 +119,7 @@ function HomeContent() {
     SHEET_HEIGHTS.peek,
   );
   const logout = useAuthStore((s) => s.logout);
+  const role = useAuthStore((s) => s.role);
   const router = useRouter();
 
   const sortedByDistance = userPos
@@ -380,8 +381,8 @@ function HomeContent() {
 
       {/* Stats Cards */}
       <div className="px-3 pt-2 pb-1 flex flex-col gap-2">
-        {/* Linha 1: Pregadores + Publicadores Trabalhando */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Linha 1: Pregadores + Publicadores Trabalhando — apenas ANCIAO e ADMIN */}
+        {(role === "ANCIAO" || role === "ADMIN") && <div className="grid grid-cols-2 gap-2">
           <div className="rounded-xl bg-white/90 border border-[var(--color-border)] shadow-sm px-3 py-2 flex flex-col items-center">
             <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-light)] font-semibold leading-tight text-center">Pregadores</span>
             <span className="text-2xl font-bold text-[var(--color-primary-dark)] leading-tight">
@@ -400,7 +401,7 @@ function HomeContent() {
               {stats ? stats.onlineUsers : "—"}
             </span>
           </div>
-        </div>
+        </div>}
         {/* Linha 2: Revisitas + Ativas + Inativas */}
         <div className="grid grid-cols-3 gap-2">
           <div className="rounded-xl bg-white/90 border border-[var(--color-border)] shadow-sm px-2 py-2 flex flex-col items-center">

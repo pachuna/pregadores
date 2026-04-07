@@ -7,6 +7,7 @@ import {
   adminApi,
   type Congregation,
   type AdminUser,
+  type CongregationMember,
 } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import AuthGuard from "@/components/AuthGuard";
@@ -17,21 +18,243 @@ const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700 border-yellow-200",
   ACTIVE: "bg-green-100 text-green-700 border-green-200",
   BLOCKED: "bg-red-100 text-red-700 border-red-200",
+  REJECTED: "bg-gray-100 text-gray-600 border-gray-300",
 };
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendente",
   ACTIVE: "Ativa",
   BLOCKED: "Bloqueada",
+  REJECTED: "Recusada",
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: "Administrador",
+  ANCIAO: "Ancião",
+  PUBLICADOR: "Publicador",
+};
+
+function MembersSection({
+  congregationId,
+  reload,
+}: {
+  congregationId: string;
+  reload: () => void;
+}) {
+  const [members, setMembers] = useState<CongregationMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  const loadMembers = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const { data } = await congregationsApi.getById(congregationId);
+      setMembers(data.members ?? []);
+    } catch {
+      setError("Erro ao carregar membros.");
+    } finally {
+      setLoading(false);
+    }
+  }, [congregationId]);
+
+  useEffect(() => {
+    loadMembers();
+  }, [loadMembers]);
+
+  const removeMember = async (member: CongregationMember) => {
+    if (!confirm(`Remover ${member.email} da congregação?`)) return;
+    setRemoving(member.id);
+    try {
+      await congregationsApi.removeMember(congregationId, member.id);
+      setMembers((prev) => prev.filter((m) => m.id !== member.id));
+      reload();
+    } catch {
+      setError("Erro ao remover membro.");
+    } finally {
+      setRemoving(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-4">
+        <div
+          className="w-5 h-5 rounded-full border-2 animate-spin"
+          style={{ borderColor: "var(--color-primary)", borderTopColor: "transparent" }}
+        />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <p className="text-xs text-[var(--color-danger)] py-2">{error}</p>;
+  }
+
+  if (members.length === 0) {
+    return (
+      <p className="text-xs text-[var(--color-text-light)] py-2 text-center">
+        Nenhum membro vinculado.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2 mt-1">
+      {members.map((m) => (
+        <div
+          key={m.id}
+          className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border"
+          style={{
+            borderColor: m.isBlocked ? "var(--color-danger)" : "var(--color-border)",
+            background: "var(--color-surface-alt, #f8f9fb)",
+            opacity: m.isBlocked ? 0.75 : 1,
+          }}
+        >
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-[var(--color-text)] truncate">{m.email}</p>
+            <p className="text-[10px] text-[var(--color-text-light)] mt-0.5">
+              {ROLE_LABELS[m.role]} · {m._count.revisits} revisita(s)
+              {m.isBlocked && <span className="ml-1 font-semibold text-red-600">BLOQUEADO</span>}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => removeMember(m)}
+            disabled={removing === m.id}
+            className="btn-secondary text-xs py-1 px-2 shrink-0"
+            style={{ color: "var(--color-danger)", width: "auto" }}
+            aria-label={`Remover ${m.email}`}
+          >
+            {removing === m.id ? (
+              "..."
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+              </svg>
+            )}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Modal Recusar Congregação ──────────────────────────────────────────────
+
+interface RejectModalProps {
+  congregation: Congregation;
+  onClose: () => void;
+  onRejected: () => void;
+}
+
+function RejectModal({ congregation, onClose, onRejected }: RejectModalProps) {
+  const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reason.trim()) {
+      setError("Informe o motivo da recusa.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      await congregationsApi.update(congregation.id, {
+        status: "REJECTED",
+        rejectionReason: reason.trim(),
+      });
+      onRejected();
+    } catch (err: unknown) {
+      const msg =
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
+          ? (err as { response: { data: { error: string } } }).response.data.error
+          : "Erro ao recusar. Tente novamente.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.45)" }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="card w-full max-w-md flex flex-col">
+        <h2 className="text-lg font-semibold text-[var(--color-text)] mb-1">
+          Recusar Solicitação
+        </h2>
+        <p className="text-sm text-[var(--color-text-light)] mb-4 truncate">
+          {congregation.name} — {congregation.city}/{congregation.state}
+        </p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div>
+            <label htmlFor="rejection-reason" className="input-label">
+              Motivo da recusa <span className="text-[var(--color-danger)]">*</span>
+            </label>
+            <textarea
+              id="rejection-reason"
+              className="input mt-1 resize-none"
+              rows={4}
+              placeholder="Descreva o motivo da recusa para que o solicitante possa corrigir..."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              required
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-[var(--color-danger)] text-center">{error}</p>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary flex-1"
+              disabled={loading}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="btn-primary flex-1"
+              disabled={loading}
+              style={{ background: "var(--color-danger)" }}
+            >
+              {loading ? "Recusando..." : "Recusar"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+type LinkMode = "ANCIAO" | "PUBLICADOR";
+
+const LINK_MODE_LABELS: Record<LinkMode, string> = {
+  ANCIAO: "Ancião",
+  PUBLICADOR: "Publicador",
 };
 
 interface LinkElderModalProps {
   congregation: Congregation;
+  mode: LinkMode;
   onClose: () => void;
   onLinked: () => void;
 }
 
-function LinkElderModal({ congregation, onClose, onLinked }: LinkElderModalProps) {
+function LinkElderModal({ congregation, mode, onClose, onLinked }: LinkElderModalProps) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -42,16 +265,15 @@ function LinkElderModal({ congregation, onClose, onLinked }: LinkElderModalProps
     adminApi
       .listUsers()
       .then(({ data }) =>
-        // Somente Anciãos e Publicadores sem congregação
         setUsers(
           data.filter(
-            (u) => u.role !== "ADMIN" && !u.congregationId && !u.isBlocked
+            (u) => u.role === mode && !u.congregationId && !u.isBlocked
           )
         )
       )
       .catch(() => setError("Erro ao carregar usuários."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [mode]);
 
   const filtered = users.filter((u) =>
     u.email.toLowerCase().includes(search.toLowerCase())
@@ -65,8 +287,8 @@ function LinkElderModal({ congregation, onClose, onLinked }: LinkElderModalProps
       if (congregation.status === "PENDING") {
         await congregationsApi.update(congregation.id, { status: "ACTIVE" });
       }
-      // 2. Vincular usuário como ANCIAO + congregationId
-      await congregationsApi.addMember(congregation.id, user.id, "ANCIAO");
+      // 2. Vincular usuário com a role correta + congregationId
+      await congregationsApi.addMember(congregation.id, user.id, mode);
       onLinked();
     } catch (err: unknown) {
       const msg =
@@ -91,7 +313,7 @@ function LinkElderModal({ congregation, onClose, onLinked }: LinkElderModalProps
     >
       <div className="card w-full max-w-md max-h-[80vh] flex flex-col">
         <h2 className="text-lg font-semibold text-[var(--color-text)] mb-1">
-          Vincular Primeiro Ancião
+          Vincular {LINK_MODE_LABELS[mode]}
         </h2>
         <p className="text-sm text-[var(--color-text-light)] mb-4 truncate">
           {congregation.name} — {congregation.city}/{congregation.state}
@@ -138,6 +360,7 @@ function LinkElderModal({ congregation, onClose, onLinked }: LinkElderModalProps
                   onClick={() => linkUser(u)}
                   disabled={linking}
                   className="btn-primary text-xs py-1.5 px-3 shrink-0"
+                  style={{ width: "auto" }}
                 >
                   {linking ? "..." : "Vincular"}
                 </button>
@@ -308,8 +531,17 @@ function AdminCongregationsContent() {
   const [congregations, setCongregations] = useState<Congregation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [linkTarget, setLinkTarget] = useState<Congregation | null>(null);
+  const [linkTarget, setLinkTarget] = useState<{ congregation: Congregation; mode: LinkMode } | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<Congregation | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
+
+  const toggleMembers = (id: string) =>
+    setExpandedMembers((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   useEffect(() => {
     if (role && role !== "ADMIN") router.replace("/home");
@@ -461,31 +693,54 @@ function AdminCongregationsContent() {
                         </div>
 
                         {/* Meta */}
-                        <p className="text-xs text-[var(--color-text-light)] mb-3">
+                        <p className="text-xs text-[var(--color-text-light)] mb-1">
                           {c._count?.members ?? 0} membro(s) · Solicitado por{" "}
                           {c.createdBy?.email ?? "—"}
                         </p>
+                        {c.status === "REJECTED" && c.rejectionReason && (
+                          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2 py-1.5 mb-3">
+                            <span className="font-semibold">Motivo da recusa:</span> {c.rejectionReason}
+                          </p>
+                        )}
+                        {c.status !== "REJECTED" && <div className="mb-3" />}
 
                         {/* Actions */}
                         <div className="flex gap-2 flex-wrap">
                           {c.status === "PENDING" && (
-                            <button
-                              type="button"
-                              onClick={() => setLinkTarget(c)}
-                              className="btn-primary text-xs py-1.5 px-3 flex-1"
-                            >
-                              Aprovar e vincular Ancião
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setLinkTarget({ congregation: c, mode: "ANCIAO" })}
+                                className="btn-primary text-xs py-1.5 px-3 flex-1"
+                              >
+                                Aprovar e vincular Ancião
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setRejectTarget(c)}
+                                className="btn-secondary text-xs py-1.5 px-3"
+                                style={{ color: "var(--color-danger)" }}
+                              >
+                                Recusar
+                              </button>
+                            </>
                           )}
 
                           {c.status === "ACTIVE" && (
                             <>
                               <button
                                 type="button"
-                                onClick={() => setLinkTarget(c)}
+                                onClick={() => setLinkTarget({ congregation: c, mode: "ANCIAO" })}
                                 className="btn-secondary text-xs py-1.5 px-3 flex-1"
                               >
                                 Vincular Ancião
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setLinkTarget({ congregation: c, mode: "PUBLICADOR" })}
+                                className="btn-secondary text-xs py-1.5 px-3 flex-1"
+                              >
+                                Vincular Publicador
                               </button>
                               <button
                                 type="button"
@@ -508,7 +763,35 @@ function AdminCongregationsContent() {
                               Reativar
                             </button>
                           )}
+
+                          {c.status === "REJECTED" && (
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(c, "PENDING")}
+                              className="btn-secondary text-xs py-1.5 px-3 flex-1"
+                            >
+                              Recolocar em análise
+                            </button>
+                          )}
+
+                          {/* Botão ver/ocultar membros */}
+                          {(c._count?.members ?? 0) > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleMembers(c.id)}
+                              className="btn-secondary text-xs py-1.5 px-3"
+                            >
+                              {expandedMembers.has(c.id) ? "Ocultar membros" : `Ver membros (${c._count?.members ?? 0})`}
+                            </button>
+                          )}
                         </div>
+
+                        {/* Lista de membros expandida */}
+                        {expandedMembers.has(c.id) && (
+                          <div className="mt-3 pt-3 border-t" style={{ borderColor: "var(--color-border)" }}>
+                            <MembersSection congregationId={c.id} reload={load} />
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -519,10 +802,23 @@ function AdminCongregationsContent() {
         )}
       </div>
 
-      {/* Modal vincular Ancião */}
+      {/* Modal Recusar */}
+      {rejectTarget && (
+        <RejectModal
+          congregation={rejectTarget}
+          onClose={() => setRejectTarget(null)}
+          onRejected={() => {
+            setRejectTarget(null);
+            load();
+          }}
+        />
+      )}
+
+      {/* Modal vincular Ancião / Publicador */}
       {linkTarget && (
         <LinkElderModal
-          congregation={linkTarget}
+          congregation={linkTarget.congregation}
+          mode={linkTarget.mode}
           onClose={() => setLinkTarget(null)}
           onLinked={() => {
             setLinkTarget(null);

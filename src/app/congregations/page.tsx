@@ -17,19 +17,23 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   PENDING: { label: "Aguardando aprovação", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
   ACTIVE: { label: "Ativa", color: "text-green-700 bg-green-50 border-green-200" },
   BLOCKED: { label: "Bloqueada", color: "text-red-700 bg-red-50 border-red-200" },
+  REJECTED: { label: "Recusada", color: "text-gray-600 bg-gray-100 border-gray-300" },
 };
 
 function MemberCard({
   member,
-  canManage,
+  currentRole,
   congregationId,
   onUpdate,
 }: {
   member: CongregationMember;
-  canManage: boolean;
+  currentRole: string;
   congregationId: string;
   onUpdate: () => void;
 }) {
+  // ADMIN pode gerenciar qualquer membro; ANCIAO apenas Publicadores
+  const canShowActions =
+    currentRole === "ADMIN" || (currentRole === "ANCIAO" && member.role !== "ANCIAO");
   const [loading, setLoading] = useState(false);
 
   const toggleBlock = async () => {
@@ -74,7 +78,7 @@ function MemberCard({
             )}
           </p>
         </div>
-        {canManage && member.role !== "ANCIAO" && (
+        {canShowActions && (
           <div className="flex gap-1.5 shrink-0">
             <button
               type="button"
@@ -119,17 +123,20 @@ function CongregationContent() {
     setLoading(true);
     try {
       const { data } = await congregationsApi.getMine();
-      // Se data for array (admin pode receber lista), pega null
       if (Array.isArray(data)) {
         setCongregation(null);
-      } else {
-        // Se tiver id, carrega o detalhe com membros
-        if (data && "id" in data) {
-          const { data: detail } = await congregationsApi.getById((data as Congregation).id);
+      } else if (data && "id" in data) {
+        const cong = data as Congregation;
+        // Só busca detalhe completo (com membros) se ACTIVE ou BLOCKED
+        // Para PENDING/REJECTED o usuário pode não ser membro ainda
+        if (cong.status === "ACTIVE" || cong.status === "BLOCKED") {
+          const { data: detail } = await congregationsApi.getById(cong.id);
           setCongregation(detail);
         } else {
-          setCongregation(null);
+          setCongregation(cong);
         }
+      } else {
+        setCongregation(null);
       }
     } catch {
       setCongregation(null);
@@ -246,8 +253,8 @@ function CongregationContent() {
           </div>
         )}
 
-        {/* Congregação encontrada */}
-        {congregation && (
+        {/* Congregação encontrada (oculta se o formulário de nova solicitação está aberto) */}
+        {congregation && !showForm && (
           <>
             {/* Status card */}
             <div className="card mb-4">
@@ -270,6 +277,25 @@ function CongregationContent() {
                   <span>{congregation._count.members} membro(s)</span>
                 )}
               </div>
+
+              {/* Motivo de recusa */}
+              {congregation.status === "REJECTED" && congregation.rejectionReason && (
+                <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200">
+                  <p className="text-xs font-semibold text-red-700 mb-1">Motivo da recusa:</p>
+                  <p className="text-sm text-red-700">{congregation.rejectionReason}</p>
+                </div>
+              )}
+
+              {/* Ação quando recusada — permite nova solicitação */}
+              {congregation.status === "REJECTED" && (
+                <button
+                  type="button"
+                  onClick={() => setShowForm(true)}
+                  className="btn-primary w-full mt-4"
+                >
+                  Enviar nova solicitação
+                </button>
+              )}
             </div>
 
             {/* Membros — Ancião pode gerenciar */}
@@ -288,7 +314,7 @@ function CongregationContent() {
                       <MemberCard
                         key={member.id}
                         member={member}
-                        canManage={role === "ANCIAO" || role === "ADMIN"}
+                        currentRole={role ?? ""}
                         congregationId={congregation.id}
                         onUpdate={load}
                       />

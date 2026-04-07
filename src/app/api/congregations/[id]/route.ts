@@ -4,7 +4,7 @@ import { authenticateRequest } from "@/lib/auth-middleware";
 import { notifyUser } from "@/lib/push";
 import { CongregationStatus } from "@/generated/prisma/enums";
 
-const VALID_STATUSES: CongregationStatus[] = ["PENDING", "ACTIVE", "BLOCKED"];
+const VALID_STATUSES: CongregationStatus[] = ["PENDING", "ACTIVE", "BLOCKED", "REJECTED"];
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 /**
  * PATCH /api/congregations/[id]
  * ADMIN: edita dados e status.
- * Body: { name?, jwEmail?, state?, city?, status? }
+ * Body: { name?, jwEmail?, state?, city?, status?, rejectionReason? }
  */
 export async function PATCH(request: NextRequest, { params }: Params) {
   const auth = await authenticateRequest(request);
@@ -84,6 +84,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     state?: string;
     city?: string;
     status?: CongregationStatus;
+    rejectionReason?: string | null;
   } = {};
 
   if (typeof body.name === "string" && body.name.trim()) {
@@ -106,6 +107,18 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       );
     }
     updateData.status = body.status as CongregationStatus;
+    // Ao rejeitar, obriga motivo; ao aprovar/reativar, limpa o motivo
+    if (body.status === "REJECTED") {
+      const reason = typeof body.rejectionReason === "string" ? body.rejectionReason.trim() : "";
+      if (!reason) {
+        return NextResponse.json({ error: "Informe o motivo da recusa." }, { status: 400 });
+      }
+      updateData.rejectionReason = reason;
+    } else {
+      updateData.rejectionReason = null;
+    }
+  } else if (typeof body.rejectionReason === "string") {
+    updateData.rejectionReason = body.rejectionReason.trim() || null;
   }
 
   if (Object.keys(updateData).length === 0) {
@@ -117,11 +130,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Congregação não encontrada" }, { status: 404 });
   }
 
-  const updated = await prisma.congregation.update({
-    where: { id },
-    data: updateData,
-    include: { _count: { select: { members: true } } },
-  });
+  let updated;
+  try {
+    updated = await prisma.congregation.update({
+      where: { id },
+      data: updateData,
+      include: { _count: { select: { members: true } } },
+    });
+  } catch (dbErr) {
+    console.error("[PATCH /congregations/:id] Prisma error:", dbErr);
+    return NextResponse.json({ error: "Erro ao atualizar congregação." }, { status: 500 });
+  }
 
   // Notifica o solicitante se o status mudou
   if (updateData.status && updateData.status !== target.status) {
@@ -129,6 +148,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       ACTIVE: "foi aprovada! Você já pode gerenciar sua congregação.",
       BLOCKED: "foi bloqueada. Entre em contato com o administrador.",
       PENDING: "voltou para análise.",
+      REJECTED: `foi recusada. Motivo: ${updateData.rejectionReason ?? "—"}`,
     };
     await notifyUser(target.createdById, {
       title: `Congregação ${updated.name}`,
