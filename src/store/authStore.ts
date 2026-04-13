@@ -7,7 +7,8 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   role: string | null;
-  setTokens: (accessToken: string, refreshToken: string, role?: string) => void;
+  congregationId: string | null;
+  setTokens: (accessToken: string, refreshToken: string, role?: string, congregationId?: string | null) => void;
   logout: () => void;
 }
 
@@ -17,9 +18,10 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       role: null,
-      setTokens: (accessToken, refreshToken, role) =>
-        set({ accessToken, refreshToken, role: role ?? null }),
-      logout: () => set({ accessToken: null, refreshToken: null, role: null }),
+      congregationId: null,
+      setTokens: (accessToken, refreshToken, role, congregationId) =>
+        set({ accessToken, refreshToken, role: role ?? null, congregationId: congregationId ?? null }),
+      logout: () => set({ accessToken: null, refreshToken: null, role: null, congregationId: null }),
     }),
     {
       name: "pregadores-auth",

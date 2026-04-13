@@ -525,6 +525,120 @@ function CreateCongregationModal({ onClose, onCreated }: CreateCongregationModal
   );
 }
 
+// ── Modal Apagar Congregação ───────────────────────────────────────────────
+
+interface DeleteCongregationModalProps {
+  congregation: Congregation;
+  onClose: () => void;
+  onDeleted: () => void;
+}
+
+function DeleteCongregationModal({ congregation, onClose, onDeleted }: DeleteCongregationModalProps) {
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleDelete = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      await congregationsApi.delete(congregation.id);
+      onDeleted();
+    } catch (err: unknown) {
+      const msg =
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
+          ? (err as { response: { data: { error: string } } }).response.data.error
+          : "Erro ao apagar. Tente novamente.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.6)" }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="card w-full max-w-md flex flex-col gap-4">
+        {/* Ícone de alerta */}
+        <div className="flex flex-col items-center text-center gap-2">
+          <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7 text-red-600" aria-hidden="true">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-bold text-[var(--color-text)]">Apagar Congregação</h2>
+          <p className="text-sm text-[var(--color-text-light)]">
+            <span className="font-semibold text-[var(--color-text)]">{congregation.name}</span>
+            {" "}— {congregation.city}/{congregation.state}
+          </p>
+        </div>
+
+        {/* Aviso */}
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex flex-col gap-1">
+          <p className="text-sm font-semibold text-red-700">Esta ação é irreversível.</p>
+          <ul className="list-disc list-inside text-xs text-red-600 mt-1 space-y-1">
+            <li>Todos os <b>territórios, ruas, casas e visitas</b> serão excluídos</li>
+            <li>
+              Os <b>{congregation._count?.members ?? 0} membro(s)</b> serão desvinculados da congregação
+            </li>
+          </ul>
+        </div>
+
+        {/* Campo de confirmação */}
+        <div>
+          <label htmlFor="delete-confirm" className="input-label">
+            Digite <span className="font-bold text-[var(--color-danger)]">APAGAR</span> para confirmar:
+          </label>
+          <input
+            id="delete-confirm"
+            type="text"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            className="input mt-1"
+            placeholder="APAGAR"
+            autoComplete="off"
+          />
+        </div>
+
+        {error && (
+          <p className="text-sm text-[var(--color-danger)] text-center">{error}</p>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-secondary flex-1"
+            disabled={loading}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={loading || confirm !== "APAGAR"}
+            className="btn-primary flex-1"
+            style={{
+              background: "var(--color-danger)",
+              opacity: confirm !== "APAGAR" ? 0.45 : 1,
+            }}
+          >
+            {loading ? "Apagando..." : "Apagar definitivamente"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AdminCongregationsContent() {
   const role = useAuthStore((s) => s.role);
   const router = useRouter();
@@ -533,6 +647,7 @@ function AdminCongregationsContent() {
   const [error, setError] = useState("");
   const [linkTarget, setLinkTarget] = useState<{ congregation: Congregation; mode: LinkMode } | null>(null);
   const [rejectTarget, setRejectTarget] = useState<Congregation | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Congregation | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
 
@@ -774,6 +889,20 @@ function AdminCongregationsContent() {
                             </button>
                           )}
 
+                          {/* Botão apagar congregação */}
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget(c)}
+                            className="btn-secondary text-xs py-1.5 px-3 shrink-0"
+                            style={{ color: "var(--color-danger)" }}
+                            aria-label={`Apagar ${c.name}`}
+                            title="Apagar congregação"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                            </svg>
+                          </button>
+
                           {/* Botão ver/ocultar membros */}
                           {(c._count?.members ?? 0) > 0 && (
                             <button
@@ -834,6 +963,18 @@ function AdminCongregationsContent() {
           onCreated={(newCong) => {
             setCongregations((prev) => [newCong, ...prev]);
             setShowCreate(false);
+          }}
+        />
+      )}
+
+      {/* Modal apagar congregação */}
+      {deleteTarget && (
+        <DeleteCongregationModal
+          congregation={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={() => {
+            setCongregations((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+            setDeleteTarget(null);
           }}
         />
       )}

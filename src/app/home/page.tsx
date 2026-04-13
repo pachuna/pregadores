@@ -168,6 +168,7 @@ function HomeContent() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const logout = useAuthStore((s) => s.logout);
   const role = useAuthStore((s) => s.role);
+  const congregationId = useAuthStore((s) => s.congregationId);
   const router = useRouter();
 
   const loadRevisits = useCallback(async () => {
@@ -221,6 +222,7 @@ function HomeContent() {
 
   const congregationHref = role === "ADMIN" ? "/admin" : "/congregations";
   const congregationLabel = role === "ADMIN" ? "Admin" : "Congregação";
+  const adminHasCongregation = role === "ADMIN" && !!congregationId;
 
   const handleLogout = () => {
     logout();
@@ -287,6 +289,13 @@ function HomeContent() {
               icon={role === "ADMIN" ? "admin" : "congregation"}
               onClick={() => router.push(congregationHref)}
             />
+            {adminHasCongregation && (
+              <QuickAction
+                label="Congregação"
+                icon="congregation"
+                onClick={() => router.push("/congregations")}
+              />
+            )}
           </div>
         </div>
 

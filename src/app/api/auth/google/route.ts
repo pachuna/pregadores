@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     const tokens = await generateTokenPair(user.id, user.role);
-    return NextResponse.json({ ...tokens, role: user.role });
+    return NextResponse.json({ ...tokens, role: user.role, congregationId: user.congregationId ?? null });
   } catch (error) {
     console.error("Erro no auth Google:", error);
     return NextResponse.json(

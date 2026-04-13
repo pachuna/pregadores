@@ -64,7 +64,7 @@ api.interceptors.response.use(
         refreshPromise = api
           .post<AuthTokens>("/api/auth/refresh", { refreshToken })
           .then(({ data }) => {
-            setTokens(data.accessToken, data.refreshToken, data.role);
+            setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId);
             return data;
           })
           .catch(() => {
@@ -295,6 +295,10 @@ export const congregationsApi = {
   ) => api.patch(`/api/congregations/${congregationId}/members`, data),
   removeMember: (congregationId: string, userId: string) =>
     api.delete(`/api/congregations/${congregationId}/members`, { data: { userId } }),
+  delete: (id: string) =>
+    api.delete<{ ok: boolean; message: string; membersUnlinked: number; territoriesRemoved: number }>(
+      `/api/congregations/${id}`
+    ),
 };
 
 export default api;

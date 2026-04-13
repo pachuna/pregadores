@@ -159,3 +159,70 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   return NextResponse.json(updated);
 }
+
+/**
+ * DELETE /api/congregations/[id]
+ * Apenas ADMIN pode excluir uma congregação.
+ * Desvincula membros, remove territórios (cascata) e então exclui a congregação.
+ */
+export async function DELETE(request: NextRequest, { params }: Params) {
+  const auth = await authenticateRequest(request);
+  if (auth instanceof NextResponse) return auth;
+
+  if (auth.role !== "ADMIN") {
+    return NextResponse.json({ error: "Acesso negado. Apenas ADMIN pode excluir congregações." }, { status: 403 });
+  }
+
+  const { id } = await params;
+
+  const congregation = await prisma.congregation.findUnique({
+    where: { id },
+    include: { _count: { select: { members: true, territories: true } } },
+  });
+
+  if (!congregation) {
+    return NextResponse.json({ error: "Congregação não encontrada." }, { status: 404 });
+  }
+
+  // Executa tudo em uma transação para garantir atomicidade
+  await prisma.$transaction(async (tx) => {
+    // 1. Desvincula membros (não exclui usuários)
+    await tx.user.updateMany({
+      where: { congregationId: id },
+      data: { congregationId: null },
+    });
+
+    // 2. Remove visitas das casas dos territórios desta congregação
+    await tx.houseVisit.deleteMany({
+      where: { house: { street: { territory: { congregationId: id } } } },
+    });
+
+    // 3. Remove casas
+    await tx.house.deleteMany({
+      where: { street: { territory: { congregationId: id } } },
+    });
+
+    // 4. Remove ruas
+    await tx.street.deleteMany({
+      where: { territory: { congregationId: id } },
+    });
+
+    // 5. Remove territórios
+    await tx.territory.deleteMany({
+      where: { congregationId: id },
+    });
+
+    // 6. Remove push subscriptions de membros (já desvinculados, mas limpeza de dados)
+    // Não removemos — pertencem ao usuário, não à congregação.
+
+    // 7. Exclui a congregação
+    await tx.congregation.delete({ where: { id } });
+  });
+
+  return NextResponse.json({
+    ok: true,
+    message: `Congregação "${congregation.name}" excluída com sucesso.`,
+    membersUnlinked: congregation._count.members,
+    territoriesRemoved: congregation._count.territories,
+  });
+}

@@ -2,6 +2,7 @@ export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
   role?: string;
+  congregationId?: string | null;
 }
 
 export interface Revisit {
