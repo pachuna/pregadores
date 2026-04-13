@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from "next";
 import InstallHomePrompt from "@/components/InstallHomePrompt";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import PushSubscriber from "@/components/PushSubscriber";
-import "@fontsource/merriweather/400.css";
-import "@fontsource/merriweather/700.css";
-import "@fontsource/merriweather/900.css";
-import "@fontsource/source-sans-3/400.css";
-import "@fontsource/source-sans-3/500.css";
-import "@fontsource/source-sans-3/600.css";
-import "@fontsource/source-sans-3/700.css";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/plus-jakarta-sans/600.css";
+import "@fontsource/plus-jakarta-sans/700.css";
+import "@fontsource/plus-jakarta-sans/800.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#4a6da7",
+  themeColor: "#050d1a",
 };
 
 export default function RootLayout({

@@ -313,7 +313,7 @@ function PioneerContent() {
         >
           <div
             className="w-full max-w-sm rounded-2xl overflow-hidden"
-            style={{ background: "#fff", boxShadow: "var(--shadow-strong)" }}
+            style={{ background: "var(--color-surface-card)", border: "1px solid var(--color-border)", boxShadow: "var(--shadow-strong)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 pt-5 pb-2">
@@ -384,7 +384,7 @@ function PioneerContent() {
 
       {/* ── Calendar ── */}
       <div className="px-3 pt-3 pb-1">
-        <div className="rounded-2xl overflow-hidden" style={{ background: "#fff", boxShadow: "var(--shadow-soft)" }}>
+        <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface-card)", boxShadow: "var(--shadow-soft)", border: "1px solid var(--color-border)" }}>
           {/* Weekday headers */}
           <div className="grid grid-cols-7 mb-1 pt-2 px-1">
             {WEEKDAYS_SHORT.map((d, i) => (
@@ -455,7 +455,7 @@ function PioneerContent() {
 
           {/* ── Cronômetro ── */}
           <div className="rounded-2xl py-5 px-4 mb-5 flex flex-col items-center"
-            style={{ background: "var(--color-surface-alt, #f8fafc)" }}>
+            style={{ background: "var(--color-surface-elevated)", border: "1px solid var(--color-border)" }}>
             <p className="text-xs font-semibold text-[var(--color-text-light)] uppercase tracking-wide mb-4">
               Cronômetro
             </p>
