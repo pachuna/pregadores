@@ -525,6 +525,146 @@ function CreateCongregationModal({ onClose, onCreated }: CreateCongregationModal
   );
 }
 
+// ── Modal Editar Congregação ───────────────────────────────────────────────
+
+interface EditCongregationModalProps {
+  congregation: Congregation;
+  onClose: () => void;
+  onSaved: (updated: Congregation) => void;
+}
+
+function EditCongregationModal({ congregation, onClose, onSaved }: EditCongregationModalProps) {
+  const [name, setName] = useState(congregation.name);
+  const [jwEmail, setJwEmail] = useState(congregation.jwEmail);
+  const [selectedState, setSelectedState] = useState(congregation.state);
+  const [selectedCity, setSelectedCity] = useState(congregation.city);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const { states, loading: statesLoading } = useIBGEStates();
+  const { cities, loading: citiesLoading } = useIBGECities(selectedState);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!name.trim() || !jwEmail.trim() || !selectedState || !selectedCity) {
+      setError("Preencha todos os campos.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data } = await congregationsApi.update(congregation.id, {
+        name: name.trim(),
+        jwEmail: jwEmail.trim().toLowerCase(),
+        state: selectedState,
+        city: selectedCity,
+      });
+      onSaved(data);
+    } catch (err: unknown) {
+      const msg =
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
+          ? (err as { response: { data: { error: string } } }).response.data.error
+          : "Erro ao salvar. Tente novamente.";
+      setError(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.45)" }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="card w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <h2 className="text-lg font-semibold text-[var(--color-text)] mb-1">Editar Congregação</h2>
+        <p className="text-sm text-[var(--color-text-light)] mb-5 truncate">
+          {congregation.city}/{congregation.state}
+        </p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div>
+            <label htmlFor="edit-name" className="input-label">Nome da congregação</label>
+            <input
+              id="edit-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="input mt-1"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="edit-email" className="input-label">E-mail JW</label>
+            <input
+              id="edit-email"
+              type="email"
+              value={jwEmail}
+              onChange={(e) => setJwEmail(e.target.value)}
+              className="input mt-1"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="edit-state" className="input-label">Estado</label>
+            <select
+              id="edit-state"
+              value={selectedState}
+              onChange={(e) => { setSelectedState(e.target.value); setSelectedCity(""); }}
+              className="input mt-1"
+              required
+              disabled={statesLoading}
+            >
+              <option value="">{statesLoading ? "Carregando..." : "Selecione o estado"}</option>
+              {states.map((s) => (
+                <option key={s.sigla} value={s.sigla}>{s.nome} ({s.sigla})</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="edit-city" className="input-label">Cidade</label>
+            <select
+              id="edit-city"
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              className="input mt-1"
+              required
+              disabled={!selectedState || citiesLoading}
+            >
+              <option value="">
+                {!selectedState ? "Selecione o estado primeiro" : citiesLoading ? "Carregando..." : "Selecione a cidade"}
+              </option>
+              {cities.map((c) => (
+                <option key={c.id} value={c.nome}>{c.nome}</option>
+              ))}
+            </select>
+          </div>
+
+          {error && (
+            <p className="text-sm text-[var(--color-danger)] text-center">{error}</p>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="btn-secondary flex-1" disabled={saving}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn-primary flex-1" disabled={saving}>
+              {saving ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Modal Apagar Congregação ───────────────────────────────────────────────
 
 interface DeleteCongregationModalProps {
@@ -647,6 +787,7 @@ function AdminCongregationsContent() {
   const [error, setError] = useState("");
   const [linkTarget, setLinkTarget] = useState<{ congregation: Congregation; mode: LinkMode } | null>(null);
   const [rejectTarget, setRejectTarget] = useState<Congregation | null>(null);
+  const [editTarget, setEditTarget] = useState<Congregation | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Congregation | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
@@ -889,6 +1030,20 @@ function AdminCongregationsContent() {
                             </button>
                           )}
 
+                          {/* Botão editar congregação */}
+                          <button
+                            type="button"
+                            onClick={() => setEditTarget(c)}
+                            className="btn-secondary text-xs py-1.5 px-3 shrink-0"
+                            aria-label={`Editar ${c.name}`}
+                            title="Editar congregação"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          </button>
+
                           {/* Botão apagar congregação */}
                           <button
                             type="button"
@@ -963,6 +1118,20 @@ function AdminCongregationsContent() {
           onCreated={(newCong) => {
             setCongregations((prev) => [newCong, ...prev]);
             setShowCreate(false);
+          }}
+        />
+      )}
+
+      {/* Modal editar congregação */}
+      {editTarget && (
+        <EditCongregationModal
+          congregation={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={(updated) => {
+            setCongregations((prev) =>
+              prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c))
+            );
+            setEditTarget(null);
           }}
         />
       )}

@@ -245,6 +245,7 @@ function TerritoriesTab({ congregationId }: { congregationId: string }) {
 
 function CongregationContent() {
   const role = useAuthStore((s) => s.role);
+  const congregationId = useAuthStore((s) => s.congregationId);
   const [congregation, setCongregation] = useState<Congregation | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -254,6 +255,13 @@ function CongregationContent() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      // ADMIN vinculado a uma congregação: busca diretamente pelo id
+      if (role === "ADMIN" && congregationId) {
+        const { data: detail } = await congregationsApi.getById(congregationId);
+        setCongregation(detail);
+        return;
+      }
+
       const { data } = await congregationsApi.getMine();
       if (Array.isArray(data)) {
         setCongregation(null);
@@ -273,7 +281,7 @@ function CongregationContent() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [role, congregationId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -309,6 +317,16 @@ function CongregationContent() {
           <div className="rounded-xl p-3 mb-4 text-sm text-center"
             style={{ background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }}>
             {successMsg}
+          </div>
+        )}
+
+        {/* Sem congregação — ADMIN não vinculado */}
+        {!congregation && role === "ADMIN" && (
+          <div className="card text-center py-8">
+            <p className="text-sm text-[var(--color-text-light)]">
+              Você não está vinculado a nenhuma congregação.{"\n"}
+              Acesse o painel Admin para gerenciar congregações.
+            </p>
           </div>
         )}
 
