@@ -7,15 +7,15 @@ import { useAuthStore } from "@/store/authStore";
 type NavItem = {
   href: string;
   label: string;
-  icon: "map" | "pin" | "plus" | "admin" | "congregation" | "timer";
+  icon: "home" | "map" | "pin" | "plus" | "admin" | "congregation" | "timer";
   accent?: boolean;
   adminOnly?: boolean;
   hideForAdmin?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/home", label: "Mapa", icon: "map" },
-  { href: "/revisits/nearby", label: "Próximas", icon: "pin" },
+  { href: "/home", label: "Início", icon: "home" },
+  { href: "/mapa", label: "Mapa", icon: "map" },
   { href: "/revisits/new", label: "Nova", icon: "plus", accent: true },
   { href: "/pioneiro", label: "Pioneiro", icon: "timer" },
   { href: "/congregations", label: "Congregação", icon: "congregation", hideForAdmin: true },
@@ -23,6 +23,15 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 function NavIcon({ type }: { type: NavItem["icon"] }) {
+  if (type === "home") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5Z" />
+        <path d="M9 21V12h6v9" />
+      </svg>
+    );
+  }
+
   if (type === "map") {
     return (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
