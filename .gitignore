@@ -13,3 +13,8 @@ node_modules/
 *.tsbuildinfo
 
 /src/generated/prisma
+
+# Firebase Service Account (NUNCA versionar)
+serviceAccount.json
+*serviceAccount*.json
+firestore-backup-local/

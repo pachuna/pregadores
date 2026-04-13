@@ -13,6 +13,11 @@ enum Role {
   PUBLICADOR
 }
 
+enum HouseVisitStatus {
+  OK
+  FAIL
+}
+
 enum CongregationStatus {
   PENDING
   ACTIVE
@@ -31,6 +36,7 @@ model Congregation {
   createdById String
   createdBy   User               @relation("CongregationCreatedBy", fields: [createdById], references: [id])
   members     User[]             @relation("CongregationMembers")
+  territories Territory[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
@@ -53,6 +59,7 @@ model User {
   id                    String             @id @default(cuid())
   email                 String             @unique
   passwordHash          String
+  firebaseUid           String?            @unique
   role                  Role               @default(PUBLICADOR)
   isBlocked             Boolean            @default(false)
   congregationId        String?
@@ -64,6 +71,7 @@ model User {
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
   revisits              Revisit[]
+  houseVisits           HouseVisit[]
 
   @@index([congregationId])
 }
@@ -102,4 +110,62 @@ model Revisit {
 
   @@index([userId])
   @@index([latitude, longitude])
+}
+
+// ============================================================
+// Territórios (migrado do Firebase/Firestore - territorios-utinga)
+// ============================================================
+
+model Territory {
+  id             String        @id @default(cuid())
+  firebaseId     String?       @unique  // ID original do Firestore (número como string)
+  number         Int           @unique
+  color          String        @default("#cccccc")
+  hidden         Boolean       @default(false)
+  lastUpdate     DateTime?
+  congregationId String?
+  congregation   Congregation? @relation(fields: [congregationId], references: [id])
+  streets        Street[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([congregationId])
+}
+
+model Street {
+  id          String    @id              // UUID original do Firestore
+  name        String
+  lastUpdate  DateTime?
+  territoryId String
+  territory   Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+  houses      House[]
+
+  @@index([territoryId])
+}
+
+model House {
+  id          String       @id              // UUID original do Firestore
+  number      String
+  observation String?
+  phones      Json         @default("[]")
+  streetId    String
+  street      Street       @relation(fields: [streetId], references: [id], onDelete: Cascade)
+  visits      HouseVisit[]
+
+  @@index([streetId])
+}
+
+model HouseVisit {
+  id              String           @id @default(cuid())
+  houseId         String
+  house           House            @relation(fields: [houseId], references: [id], onDelete: Cascade)
+  status          HouseVisitStatus
+  visitedAt       DateTime
+  firebaseUserUid String?          // Firebase UID para dados históricos migrados
+  userId          String?
+  user            User?            @relation(fields: [userId], references: [id])
+  createdAt       DateTime         @default(now())
+
+  @@index([houseId])
+  @@index([userId])
 }

@@ -214,6 +214,55 @@ export const pushApi = {
 
 export { type PioneerReport };
 
+// ── Territórios ──────────────────────────────────────────────────────────────
+
+export interface TerritoryListItem {
+  id: string;
+  number: number;
+  color: string;
+  hidden: boolean;
+  lastUpdate: string | null;
+  totalStreets: number;
+  totalHouses: number;
+  lastVisitAt: string | null;
+}
+
+export interface HouseVisitSummary {
+  id: string;
+  status: "OK" | "FAIL";
+  visitedAt: string;
+}
+
+export interface TerritoryHouse {
+  id: string;
+  number: string;
+  observation: string | null;
+  lastVisit: HouseVisitSummary | null;
+}
+
+export interface TerritoryStreet {
+  id: string;
+  name: string;
+  lastUpdate: string | null;
+  houses: TerritoryHouse[];
+}
+
+export interface TerritoryDetail {
+  id: string;
+  number: number;
+  color: string;
+  hidden: boolean;
+  lastUpdate: string | null;
+  streets: TerritoryStreet[];
+}
+
+export const territoriesApi = {
+  list: () => api.get<TerritoryListItem[]>("/api/territories"),
+  getById: (id: string) => api.get<TerritoryDetail>(`/api/territories/${id}`),
+  markVisit: (territoryId: string, houseId: string, status: "OK" | "FAIL") =>
+    api.post<HouseVisitSummary>(`/api/territories/${territoryId}/visit`, { houseId, status }),
+};
+
 export const pioneerApi = {
   list: (year: number, month: number) =>
     api.get<PioneerReport[]>("/api/pioneer", { params: { year, month } }),
