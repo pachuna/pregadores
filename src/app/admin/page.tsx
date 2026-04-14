@@ -8,18 +8,20 @@ import { useAuthStore } from "@/store/authStore";
 import AuthGuard from "@/components/AuthGuard";
 import MobileBottomNav from "@/components/MobileBottomNav";
 
-type RoleOption = "ADMIN" | "ANCIAO" | "PUBLICADOR";
+type RoleOption = "ADMIN" | "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO";
 
 const ROLE_LABELS: Record<RoleOption, string> = {
   ADMIN: "Administrador",
   ANCIAO: "Ancião",
   PUBLICADOR: "Publicador",
+  SERVO_DE_CAMPO: "Servo de Campo",
 };
 
 const ROLE_COLORS: Record<RoleOption, string> = {
   ADMIN: "bg-red-100 text-red-700 border-red-200",
   ANCIAO: "bg-blue-100 text-blue-700 border-blue-200",
   PUBLICADOR: "bg-green-100 text-green-700 border-green-200",
+  SERVO_DE_CAMPO: "bg-purple-100 text-purple-700 border-purple-200",
 };
 
 interface EditModalProps {
@@ -73,6 +75,7 @@ function EditModal({ user, onClose, onSave }: EditModalProps) {
               className="input mt-1"
             >
               <option value="PUBLICADOR">Publicador</option>
+              <option value="SERVO_DE_CAMPO">Servo de Campo</option>
               <option value="ANCIAO">Ancião</option>
               <option value="ADMIN">Administrador</option>
             </select>
@@ -451,8 +454,8 @@ function AdminContent() {
         </div>
 
         {/* Stats bar */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {(["PUBLICADOR", "ANCIAO", "ADMIN"] as RoleOption[]).map((r) => (
+        <div className="grid grid-cols-4 gap-2 mb-6">
+          {(["PUBLICADOR", "SERVO_DE_CAMPO", "ANCIAO", "ADMIN"] as RoleOption[]).map((r) => (
             <div key={r} className="card text-center py-3 px-2" style={{ borderColor: "var(--color-border)" }}>
               <span className="text-2xl font-bold text-[var(--color-primary)]">
                 {users.filter((u) => u.role === r).length}

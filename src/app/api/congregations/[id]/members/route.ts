@@ -76,11 +76,12 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
   }
 
-  const updateData: { congregationId: string; role?: "ANCIAO" | "PUBLICADOR" } = {
+  const updateData: { congregationId: string; role?: "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO" } = {
     congregationId,
   };
   if (newRole === "ANCIAO") updateData.role = "ANCIAO";
   if (newRole === "PUBLICADOR") updateData.role = "PUBLICADOR";
+  if (newRole === "SERVO_DE_CAMPO") updateData.role = "SERVO_DE_CAMPO";
 
   const updated = await prisma.user.update({
     where: { id: userId },
@@ -158,10 +159,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     );
   }
 
-  const updateData: { isBlocked?: boolean; role?: "ANCIAO" | "PUBLICADOR" } = {};
+  const updateData: { isBlocked?: boolean; role?: "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO" } = {};
   if (typeof isBlocked === "boolean") updateData.isBlocked = isBlocked;
   if (newRole === "ANCIAO") updateData.role = "ANCIAO";
   if (newRole === "PUBLICADOR") updateData.role = "PUBLICADOR";
+  if (newRole === "SERVO_DE_CAMPO") updateData.role = "SERVO_DE_CAMPO";
 
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json({ error: "Nenhuma alteração informada" }, { status: 400 });

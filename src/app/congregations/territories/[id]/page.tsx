@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
+// import Image from "next/image";
 import AuthGuard from "@/components/AuthGuard";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import EditTerritoryModal from "@/components/EditTerritoryModal";
+import { useAuthStore } from "@/store/authStore";
 import { territoriesApi, type TerritoryDetail, type TerritoryHouse } from "@/lib/api";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -286,8 +288,12 @@ function StreetAccordion({
 function TerritoryDetailContent() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const role = useAuthStore((s) => s.role);
+  const canEdit = role === "ADMIN" || role === "ANCIAO" || role === "SERVO_DE_CAMPO";
+
   const [territory, setTerritory] = useState<TerritoryDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
   const [selectedHouse, setSelectedHouse] = useState<TerritoryHouse | null>(null);
   const [visitLoading, setVisitLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
@@ -393,29 +399,45 @@ function TerritoryDetailContent() {
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-xs text-[var(--color-text-light)] uppercase tracking-wide">Território</p>
           <h1 className="text-lg font-bold text-[var(--color-text)] leading-tight">
-            Nº {territory.number}
+            {territory.label ?? `Nº ${territory.number}`}
           </h1>
         </div>
         {territory.lastUpdate && (
-          <span className="ml-auto text-xs text-[var(--color-text-light)] shrink-0">
+          <span className="text-xs text-[var(--color-text-light)] shrink-0">
             Atualizado {formatDate(territory.lastUpdate)}
           </span>
+        )}
+        {canEdit && territory.territoryType === "STREETS" && (
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+            style={{ background: "var(--color-surface-card)", border: "1px solid var(--color-border)" }}
+            aria-label="Editar território"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              className="w-4 h-4 text-[var(--color-text)]" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </button>
         )}
       </div>
 
       {/* Imagem do território */}
-      <div className="relative w-full" style={{ aspectRatio: "16/9", background: "var(--color-surface-card)" }}>
-        <Image
-          src={`/territorios/${territory.number}.png`}
-          alt={`Mapa do Território ${territory.number}`}
-          fill
-          className="object-contain"
-          priority
-        />
-      </div>
+      {territory.imageUrl && (
+        <div className="relative w-full" style={{ aspectRatio: "16/9", background: "var(--color-surface-card)" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={territory.imageUrl}
+            alt={`Mapa do Território ${territory.label ?? territory.number}`}
+            className="w-full h-full object-contain"
+          />
+        </div>
+      )}
 
       {/* Estatísticas */}
       <div className="px-4 py-4 grid grid-cols-3 gap-2">
@@ -469,6 +491,16 @@ function TerritoryDetailContent() {
           ))}
         </div>
       </div>
+
+      {/* Modal de edição */}
+      {editOpen && territory && (
+        <EditTerritoryModal
+          territoryId={territory.id}
+          initialStreets={territory.streets.map((s) => ({ id: s.id, name: s.name }))}
+          onClose={() => setEditOpen(false)}
+          onUpdated={load}
+        />
+      )}
 
       {/* Modal de visita */}
       {selectedHouse && (

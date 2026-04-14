@@ -62,3 +62,24 @@ export async function requireAdmin(
 
   return auth;
 }
+
+/**
+ * Exige que o usuário autenticado seja ADMIN, ANCIAO ou SERVO_DE_CAMPO.
+ * Retorna AuthPayload ou NextResponse 401/403.
+ */
+export async function requireTerritoryManager(
+  request: NextRequest
+): Promise<AuthPayload | NextResponse> {
+  const auth = await authenticateRequest(request);
+  if (auth instanceof NextResponse) return auth;
+
+  const allowed = ["ADMIN", "ANCIAO", "SERVO_DE_CAMPO"];
+  if (!allowed.includes(auth.role)) {
+    return NextResponse.json(
+      { error: "Acesso negado. Requer perfil de Ancião ou Servo de Campo." },
+      { status: 403 }
+    );
+  }
+
+  return auth;
+}

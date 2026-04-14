@@ -153,7 +153,7 @@ export interface AdminUser {
   id: string;
   email: string;
   name: string | null;
-  role: "ADMIN" | "ANCIAO" | "PUBLICADOR";
+  role: "ADMIN" | "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO";
   congregationId: string | null;
   isBlocked: boolean;
   lastSeenAt: string | null;
@@ -167,7 +167,7 @@ export const adminApi = {
   updateUser: (
     id: string,
     data: {
-      role?: "ADMIN" | "ANCIAO" | "PUBLICADOR";
+      role?: "ADMIN" | "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO";
       congregationId?: string | null;
       isBlocked?: boolean;
     }
@@ -180,7 +180,7 @@ export const adminApi = {
 export interface CongregationMember {
   id: string;
   email: string;
-  role: "ADMIN" | "ANCIAO" | "PUBLICADOR";
+  role: "ADMIN" | "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO";
   isBlocked: boolean;
   lastSeenAt: string | null;
   createdAt: string;
@@ -222,6 +222,9 @@ export { type PioneerReport };
 export interface TerritoryListItem {
   id: string;
   number: number;
+  label: string | null;
+  territoryType: "IMAGE" | "STREETS";
+  imageUrl: string | null;
   color: string;
   hidden: boolean;
   lastUpdate: string | null;
@@ -253,6 +256,9 @@ export interface TerritoryStreet {
 export interface TerritoryDetail {
   id: string;
   number: number;
+  label: string | null;
+  territoryType: "IMAGE" | "STREETS";
+  imageUrl: string | null;
   color: string;
   hidden: boolean;
   lastUpdate: string | null;
@@ -264,6 +270,30 @@ export const territoriesApi = {
   getById: (id: string) => api.get<TerritoryDetail>(`/api/territories/${id}`),
   markVisit: (territoryId: string, houseId: string, status: "OK" | "FAIL") =>
     api.post<HouseVisitSummary>(`/api/territories/${territoryId}/visit`, { houseId, status }),
+  create: (data: { label: string; color?: string; territoryType: "IMAGE" | "STREETS" }) =>
+    api.post<TerritoryListItem>("/api/territories", data),
+  uploadImage: (id: string, file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return api.post<{ imageUrl: string }>(`/api/territories/${id}/image`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  addStreet: (id: string, data: { name: string; houses?: string[] }) =>
+    api.post<TerritoryStreet & { houses: TerritoryHouse[] }>(`/api/territories/${id}/streets`, data),
+  removeStreet: (id: string, streetId: string) =>
+    api.delete(`/api/territories/${id}/streets?streetId=${streetId}`),
+  searchStreets: (q: string) =>
+    api.get<{ results: Array<{ cep: string; logradouro: string; bairro: string; localidade: string; uf: string }> }>(
+      "/api/territories/street-search",
+      { params: { q } }
+    ),
+  generateMap: (id: string) =>
+    api.post<{ imageUrl: string; center: { lat: number; lng: number }; zoom: number }>(
+      `/api/territories/${id}/generate-map`
+    ),
+  delete: (id: string) =>
+    api.delete<{ ok: boolean }>(`/api/territories/${id}`),
 };
 
 export const pioneerApi = {
@@ -294,7 +324,7 @@ export const congregationsApi = {
     api.post(`/api/congregations/${congregationId}/members`, { userId, role }),
   updateMember: (
     congregationId: string,
-    data: { userId: string; isBlocked?: boolean; role?: "ANCIAO" | "PUBLICADOR" }
+    data: { userId: string; isBlocked?: boolean; role?: "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO" }
   ) => api.patch(`/api/congregations/${congregationId}/members`, data),
   removeMember: (congregationId: string, userId: string) =>
     api.delete(`/api/congregations/${congregationId}/members`, { data: { userId } }),

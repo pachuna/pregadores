@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-middleware";
 import { Role } from "@/generated/prisma/enums";
 
-const VALID_ROLES: Role[] = ["ADMIN", "ANCIAO", "PUBLICADOR"];
+const VALID_ROLES: Role[] = ["ADMIN", "ANCIAO", "PUBLICADOR", "SERVO_DE_CAMPO"];
 
 /**
  * PATCH /api/admin/users/[id] — Edita dados de um usuário (admins only)

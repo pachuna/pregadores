@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import AuthGuard from "@/components/AuthGuard";
 import CongregationRequestForm from "@/components/CongregationRequestForm";
+import CreateTerritoryModal from "@/components/CreateTerritoryModal";
 import {
   congregationsApi,
   territoriesApi,
@@ -18,7 +19,10 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Administrador",
   ANCIAO: "Ancião",
   PUBLICADOR: "Publicador",
+  SERVO_DE_CAMPO: "Servo de Campo",
 };
+
+const TERRITORY_MANAGER_ROLES = ["ADMIN", "ANCIAO", "SERVO_DE_CAMPO"];
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   PENDING: { label: "Aguardando aprovação", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
@@ -38,9 +42,10 @@ function MemberCard({
   congregationId: string;
   onUpdate: () => void;
 }) {
-  // ADMIN pode gerenciar qualquer membro; ANCIAO apenas Publicadores
+  // ADMIN pode gerenciar qualquer membro; ANCIAO pode gerenciar Publicadores e Servos; SERVO_DE_CAMPO não gerencia membros
   const canShowActions =
-    currentRole === "ADMIN" || (currentRole === "ANCIAO" && member.role !== "ANCIAO");
+    currentRole === "ADMIN" ||
+    (currentRole === "ANCIAO" && member.role !== "ANCIAO");
   const [loading, setLoading] = useState(false);
 
   const toggleBlock = async () => {
@@ -121,8 +126,17 @@ function MemberCard({
 
 // ── Territory Card ────────────────────────────────────────────────────────────
 
-function TerritoryCard({ territory }: { territory: TerritoryListItem }) {
-  const pct = territory.totalHouses > 0 ? 0 : 0; // preenchido com dados reais abaixo
+function TerritoryCard({
+  territory,
+  canManage,
+  onDelete,
+}: {
+  territory: TerritoryListItem;
+  canManage?: boolean;
+  onDelete?: () => void;
+}) {
+  const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   function formatDate(iso: string | null) {
     if (!iso) return null;
@@ -133,74 +147,191 @@ function TerritoryCard({ territory }: { territory: TerritoryListItem }) {
     });
   }
 
+  async function confirmDelete() {
+    setConfirmOpen(false);
+    setDeleting(true);
+    try {
+      await territoriesApi.delete(territory.id);
+      onDelete?.();
+    } catch {
+      setDeleting(false);
+    }
+  }
+
   return (
-    <Link
-      href={`/congregations/territories/${territory.id}`}
-      className="block rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
-      style={{
-        background: "var(--color-surface-card)",
-        border: "1px solid var(--color-border)",
-        boxShadow: "var(--shadow-soft)",
-      }}>
-      {/* Imagem do território */}
-      <div className="relative w-full bg-black/30" style={{ aspectRatio: "16/9" }}>
-        <img
-          src={`/territorios/${territory.number}.png`}
-          alt={`Território ${territory.number}`}
-          className="w-full h-full object-contain"
-          loading="lazy"
-        />
-        {/* Badge número */}
-        <div
-          className="absolute top-2 left-2 min-w-[32px] h-7 rounded-full flex items-center justify-center px-2 text-xs font-bold text-white shadow"
-          style={{ background: territory.color || "var(--color-primary)" }}>
-          {territory.number}
-        </div>
-        {territory.hidden && (
-          <div className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-medium"
-            style={{ background: "rgba(0,0,0,0.6)", color: "#fbbf24" }}>
-            Oculto
+    <>
+      <div className="relative rounded-2xl overflow-hidden"
+        style={{
+          background: "var(--color-surface-card)",
+          border: "1px solid var(--color-border)",
+          boxShadow: "var(--shadow-soft)",
+        }}>
+        <Link
+          href={`/congregations/territories/${territory.id}`}
+          className="block transition-transform active:scale-[0.98]">
+          {/* Imagem / Placeholder do território */}
+          <div className="relative w-full bg-black/30" style={{ aspectRatio: "16/9" }}>
+            {territory.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={territory.imageUrl}
+                alt={`Território ${territory.label ?? territory.number}`}
+                className="w-full h-full object-contain"
+                loading="lazy"
+              />
+            ) : territory.territoryType === "IMAGE" ? (
+              // Legado Firestore: imagem por número
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={`/territorios/${territory.number}.png`}
+                alt={`Território ${territory.number}`}
+                className="w-full h-full object-contain"
+                loading="lazy"
+              />
+            ) : (
+              // Território por ruas: placeholder
+              <div className="w-full h-full flex items-center justify-center"
+                style={{ background: `${territory.color}22` }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke={territory.color} strokeWidth="1.5"
+                  className="w-10 h-10 opacity-60" aria-hidden="true">
+                  <path d="M3 6.5L8.5 4L15.5 6.5L21 4V17.5L15.5 20L8.5 17.5L3 20V6.5Z" />
+                  <path d="M8.5 4V17.5" /><path d="M15.5 6.5V20" />
+                </svg>
+              </div>
+            )}
+            {/* Badge rótulo */}
+            <div
+              className="absolute top-2 left-2 min-w-[32px] h-7 rounded-full flex items-center justify-center px-2 text-xs font-bold text-white shadow"
+              style={{ background: territory.color || "var(--color-primary)" }}>
+              {territory.label ?? territory.number}
+            </div>
+            {territory.hidden && (
+              <div className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-medium"
+                style={{ background: "rgba(0,0,0,0.6)", color: "#fbbf24" }}>
+                Oculto
+              </div>
+            )}
           </div>
+
+          {/* Info */}
+          <div className="px-3 py-2.5">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <p className="text-sm font-semibold text-[var(--color-text)]">
+                Território {territory.label ?? territory.number}
+              </p>
+              <p className="text-xs text-[var(--color-text-light)] shrink-0">
+                {territory.totalStreets} ruas · {territory.totalHouses} casas
+              </p>
+            </div>
+
+            {territory.lastVisitAt ? (
+              <p className="text-xs text-[var(--color-text-light)]">
+                Última visita: {formatDate(territory.lastVisitAt)}
+              </p>
+            ) : (
+              <p className="text-xs" style={{ color: "var(--color-text-light)", opacity: 0.6 }}>
+                Sem visitas registradas
+              </p>
+            )}
+          </div>
+        </Link>
+
+        {/* Botão apagar — apenas para gestores */}
+        {canManage && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmOpen(true); }}
+            disabled={deleting}
+            className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
+            style={{ background: "rgba(0,0,0,0.55)" }}
+            aria-label="Apagar território"
+          >
+            {deleting ? (
+              <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"
+                className="w-3.5 h-3.5" aria-hidden="true">
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+              </svg>
+            )}
+          </button>
         )}
       </div>
 
-      {/* Info */}
-      <div className="px-3 py-2.5">
-        <div className="flex items-center justify-between gap-2 mb-1.5">
-          <p className="text-sm font-semibold text-[var(--color-text)]">
-            Território {territory.number}
-          </p>
-          <p className="text-xs text-[var(--color-text-light)] shrink-0">
-            {territory.totalStreets} ruas · {territory.totalHouses} casas
-          </p>
+      {/* Modal de confirmação */}
+      {confirmOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-5"
+          style={{ background: "rgba(0,0,0,0.7)" }}
+          onClick={() => setConfirmOpen(false)}
+        >
+          <div
+            className="w-full max-w-xs rounded-2xl p-5 flex flex-col gap-4"
+            style={{ background: "var(--color-surface-elevated)", border: "1px solid var(--color-border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Ícone */}
+            <div className="flex justify-center">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(220,38,38,0.12)" }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="1.8"
+                  className="w-6 h-6" aria-hidden="true">
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <p className="text-sm font-semibold text-[var(--color-text)] mb-1">
+                Apagar território &ldquo;{territory.label ?? territory.number}&rdquo;?
+              </p>
+              <p className="text-xs text-[var(--color-text-light)]">
+                Todas as ruas, casas e visitas serão removidas permanentemente.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(false)}
+                className="btn-secondary flex-1 py-2 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="flex-1 py-2 text-sm rounded-xl font-semibold text-white transition-opacity active:opacity-80"
+                style={{ background: "var(--color-danger)" }}
+              >
+                Apagar
+              </button>
+            </div>
+          </div>
         </div>
-
-        {territory.lastVisitAt ? (
-          <p className="text-xs text-[var(--color-text-light)]">
-            Última visita: {formatDate(territory.lastVisitAt)}
-          </p>
-        ) : (
-          <p className="text-xs" style={{ color: "var(--color-text-light)", opacity: 0.6 }}>
-            Sem visitas registradas
-          </p>
-        )}
-      </div>
-    </Link>
+      )}
+    </>
   );
 }
 
 // ── Territories Tab ───────────────────────────────────────────────────────────
 
-function TerritoriesTab({ congregationId }: { congregationId: string }) {
+function TerritoriesTab({ congregationId, role }: { congregationId: string; role: string | null }) {
   const [territories, setTerritories] = useState<TerritoryListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
     territoriesApi.list()
       .then(({ data }) => setTerritories(data))
       .catch(() => setTerritories([]))
       .finally(() => setLoading(false));
-  }, [congregationId]);
+  }, []);
+
+  useEffect(() => { load(); }, [load, congregationId]);
+
+  const canManage = role ? TERRITORY_MANAGER_ROLES.includes(role) : false;
 
   if (loading) {
     return (
@@ -213,30 +344,74 @@ function TerritoriesTab({ congregationId }: { congregationId: string }) {
 
   if (territories.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
-          style={{ background: "var(--color-primary-soft)" }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.5"
-            className="w-7 h-7" aria-hidden="true">
-            <path d="M3 6.5L8.5 4L15.5 6.5L21 4V17.5L15.5 20L8.5 17.5L3 20V6.5Z" />
-            <path d="M8.5 4V17.5" /><path d="M15.5 6.5V20" />
-          </svg>
+      <>
+        {canManage && (
+          <div className="flex justify-end mb-3">
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="btn-primary flex items-center gap-2 py-2 px-4 text-sm"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                className="w-4 h-4" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Novo Território
+            </button>
+          </div>
+        )}
+        <div className="text-center py-12">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
+            style={{ background: "var(--color-primary-soft)" }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.5"
+              className="w-7 h-7" aria-hidden="true">
+              <path d="M3 6.5L8.5 4L15.5 6.5L21 4V17.5L15.5 20L8.5 17.5L3 20V6.5Z" />
+              <path d="M8.5 4V17.5" /><path d="M15.5 6.5V20" />
+            </svg>
+          </div>
+          <p className="text-sm text-[var(--color-text-light)]">Nenhum território cadastrado.</p>
         </div>
-        <p className="text-sm text-[var(--color-text-light)]">Nenhum território cadastrado.</p>
-      </div>
+        {showCreate && (
+          <CreateTerritoryModal
+            onClose={() => setShowCreate(false)}
+            onCreated={() => { setShowCreate(false); load(); }}
+          />
+        )}
+      </>
     );
   }
 
   return (
     <div>
-      <p className="text-xs text-[var(--color-text-light)] mb-3">
-        {territories.length} territórios — toque para ver ruas e casas
-      </p>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs text-[var(--color-text-light)]">
+          {territories.length} territórios — toque para ver ruas e casas
+        </p>
+        {canManage && (
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="btn-primary flex items-center gap-2 py-1.5 px-3 text-xs"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+              className="w-3.5 h-3.5" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Novo
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-2 gap-3">
         {territories.map((t) => (
-          <TerritoryCard key={t.id} territory={t} />
+          <TerritoryCard key={t.id} territory={t} canManage={canManage} onDelete={load} />
         ))}
       </div>
+      {showCreate && (
+        <CreateTerritoryModal
+          onClose={() => setShowCreate(false)}
+          onCreated={() => { setShowCreate(false); load(); }}
+        />
+      )}
     </div>
   );
 }
@@ -519,7 +694,7 @@ function CongregationContent() {
                 )}
 
                 {tab === "territorios" && (
-                  <TerritoriesTab congregationId={congregation.id} />
+                  <TerritoriesTab congregationId={congregation.id} role={role} />
                 )}
               </>
             )}

@@ -11,6 +11,12 @@ enum Role {
   ADMIN
   ANCIAO
   PUBLICADOR
+  SERVO_DE_CAMPO
+}
+
+enum TerritoryType {
+  IMAGE
+  STREETS
 }
 
 enum HouseVisitStatus {
@@ -121,6 +127,9 @@ model Territory {
   id             String        @id @default(cuid())
   firebaseId     String?       @unique  // ID original do Firestore (número como string)
   number         Int           @unique
+  label          String?                // Rótulo customizado: "A", "Norte", "1", etc.
+  territoryType  TerritoryType @default(STREETS)
+  imageUrl       String?                // Caminho da imagem (territories IMAGE)
   color          String        @default("#cccccc")
   hidden         Boolean       @default(false)
   lastUpdate     DateTime?
