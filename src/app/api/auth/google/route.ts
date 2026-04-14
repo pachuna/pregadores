@@ -21,7 +21,7 @@ interface GoogleTokenInfo {
  */
 function httpsGet<T>(url: string): Promise<{ ok: boolean; status: number; data: T }> {
   return new Promise((resolve, reject) => {
-    const req = httpsRequest(url, { method: "GET" }, (res) => {
+    const req = httpsRequest(url, { method: "GET", family: 4 }, (res) => {
       let body = "";
       res.setEncoding("utf8");
       res.on("data", (chunk: string) => { body += chunk; });
