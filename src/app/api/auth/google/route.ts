@@ -1,4 +1,5 @@
-import { randomUUID } from "node:crypto";
+﻿import { randomUUID } from "node:crypto";
+import { request as httpsRequest } from "node:https";
 import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +12,31 @@ interface GoogleTokenInfo {
   aud?: string;
   email?: string;
   email_verified?: string | boolean;
+}
+
+/**
+ * Faz GET com o mÃ³dulo `https` do Node (nÃ£o undici/fetch).
+ * O mÃ³dulo nativo respeita --dns-result-order=ipv4first, corrigindo
+ * ETIMEDOUT em servidores sem conectividade IPv6 real.
+ */
+function httpsGet<T>(url: string): Promise<{ ok: boolean; status: number; data: T }> {
+  return new Promise((resolve, reject) => {
+    const req = httpsRequest(url, { method: "GET" }, (res) => {
+      let body = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk: string) => { body += chunk; });
+      res.on("end", () => {
+        try {
+          resolve({ ok: (res.statusCode ?? 0) >= 200 && (res.statusCode ?? 0) < 300, status: res.statusCode ?? 0, data: JSON.parse(body) as T });
+        } catch {
+          reject(new Error(`JSON invÃ¡lido: ${body.slice(0, 200)}`));
+        }
+      });
+    });
+    req.on("error", reject);
+    req.setTimeout(8000, () => { req.destroy(new Error("timeout")); });
+    req.end();
+  });
 }
 
 function getAllowedGoogleClientIds() {
@@ -26,7 +52,7 @@ function getAllowedGoogleClientIds() {
 
   const unique = Array.from(new Set([...fromServer, ...fromPublic]));
   if (unique.length === 0) {
-    throw new Error("GOOGLE_CLIENT_ID não configurado no servidor");
+    throw new Error("GOOGLE_CLIENT_ID nÃ£o configurado no servidor");
   }
 
   return unique;
@@ -39,25 +65,25 @@ export async function POST(request: NextRequest) {
 
     if (!idToken) {
       return NextResponse.json(
-        { error: "Token Google é obrigatório" },
+        { error: "Token Google Ã© obrigatÃ³rio" },
         { status: 400 },
       );
     }
 
     const allowedClientIds = getAllowedGoogleClientIds();
-    const tokenInfoResponse = await fetch(
+
+    const tokenInfoResponse = await httpsGet<GoogleTokenInfo>(
       `${GOOGLE_TOKEN_INFO_URL}?id_token=${encodeURIComponent(idToken)}`,
-      { cache: "no-store" },
     );
 
     if (!tokenInfoResponse.ok) {
       return NextResponse.json(
-        { error: "Token Google inválido" },
+        { error: "Token Google invÃ¡lido" },
         { status: 401 },
       );
     }
 
-    const tokenInfo = (await tokenInfoResponse.json()) as GoogleTokenInfo;
+    const tokenInfo = tokenInfoResponse.data;
     const emailVerified =
       tokenInfo.email_verified === true || tokenInfo.email_verified === "true";
 
@@ -67,7 +93,7 @@ export async function POST(request: NextRequest) {
         emailVerified: tokenInfo.email_verified,
       });
       return NextResponse.json(
-        { error: "Token Google inválido" },
+        { error: "Token Google invÃ¡lido" },
         { status: 401 },
       );
     }
@@ -75,7 +101,7 @@ export async function POST(request: NextRequest) {
     const email = tokenInfo.email?.trim().toLowerCase();
     if (!email) {
       return NextResponse.json(
-        { error: "Email Google não disponível" },
+        { error: "Email Google nÃ£o disponÃ­vel" },
         { status: 400 },
       );
     }
