@@ -32,8 +32,8 @@ function calcDistanceKm(
 
 function getGreeting(): string {
   const h = new Date().getHours();
-  if (h < 12) return "Bom dia";
-  if (h < 18) return "Boa tarde";
+  if (h >= 6 && h < 12) return "Bom dia";
+  if (h >= 12 && h < 18) return "Boa tarde";
   return "Boa noite";
 }
 
@@ -68,7 +68,7 @@ function StatCard({ label, value, color, pulse }: StatCardProps) {
         )}
         {label}
       </span>
-      <span className={`text-xl font-bold leading-tight ${valueClass}`}>{value ?? "â€”"}</span>
+      <span className={`text-xl font-bold leading-tight ${valueClass}`}>{value ?? "—"}</span>
     </div>
   );
 }
