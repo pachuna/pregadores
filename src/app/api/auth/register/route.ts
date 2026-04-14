@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     });
 
     const tokens = await generateTokenPair(user.id, user.role);
-    return NextResponse.json({ ...tokens, role: user.role }, { status: 201 });
+    return NextResponse.json({ ...tokens, role: user.role, congregationId: user.congregationId ?? null, name: user.name ?? null }, { status: 201 });
   } catch (error) {
     console.error("Register error:", error);
     if (

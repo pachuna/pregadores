@@ -169,6 +169,7 @@ function HomeContent() {
   const logout = useAuthStore((s) => s.logout);
   const role = useAuthStore((s) => s.role);
   const congregationId = useAuthStore((s) => s.congregationId);
+  const name = useAuthStore((s) => s.name);
   const router = useRouter();
 
   const loadRevisits = useCallback(async () => {
@@ -235,7 +236,9 @@ function HomeContent() {
       <header className="mobile-header justify-between">
         <div>
           <p className="mobile-header__meta">{getGreeting()}</p>
-          <h1 className="mobile-header__title">Pregadores</h1>
+          <h1 className="mobile-header__title">
+            {name ? name : "Pregadores"}
+          </h1>
         </div>
         <button
           className="text-sm w-auto px-3 py-2 rounded-lg border border-white/35 text-white font-semibold bg-white/10 hover:bg-white/20 transition-colors"

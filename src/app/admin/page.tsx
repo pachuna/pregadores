@@ -331,6 +331,7 @@ function AdminContent() {
   const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; user: AdminUser } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showPushModal, setShowPushModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (role && role !== "ADMIN") router.replace("/home");
@@ -467,6 +468,29 @@ function AdminContent() {
           </div>
         )}
 
+        {/* Filtro de busca */}
+        {!loading && users.length > 0 && (
+          <div className="relative mb-4">
+            <svg
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+              style={{ color: "var(--color-text-light)" }}
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            <input
+              type="search"
+              className="input pl-9"
+              placeholder="Buscar por nome ou email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Filtrar usuários"
+            />
+          </div>
+        )}
+
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: "var(--color-primary)", borderTopColor: "transparent" }} />
@@ -475,9 +499,26 @@ function AdminContent() {
           <div className="text-center py-16">
             <p className="text-[var(--color-text-light)]">Nenhum usuário encontrado.</p>
           </div>
-        ) : (
+        ) : (() => {
+            const q = searchQuery.trim().toLowerCase();
+            const filtered = q
+              ? users.filter((u) =>
+                  u.email.toLowerCase().includes(q) ||
+                  (u.name ?? "").toLowerCase().includes(q)
+                )
+              : users;
+            const sorted = [...filtered].sort((a, b) => {
+              const nameA = (a.name ?? a.email).toLowerCase();
+              const nameB = (b.name ?? b.email).toLowerCase();
+              return nameA.localeCompare(nameB, "pt-BR");
+            });
+            return sorted.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-[var(--color-text-light)] text-sm">Nenhum usuário encontrado para &ldquo;{searchQuery}&rdquo;.</p>
+              </div>
+            ) : (
           <div className="flex flex-col gap-3">
-            {users.map((user) => (
+            {sorted.map((user) => (
               <div
                 key={user.id}
                 className="card"
@@ -485,7 +526,10 @@ function AdminContent() {
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="min-w-0">
-                    <p className="font-medium text-[var(--color-text)] text-sm truncate">{user.email}</p>
+                    {user.name && (
+                      <p className="font-semibold text-[var(--color-text)] text-sm truncate">{user.name}</p>
+                    )}
+                    <p className="font-medium text-[var(--color-text-light)] text-xs truncate">{user.email}</p>
                     {user.congregationId && (
                       <p className="text-xs text-[var(--color-text-light)] truncate mt-0.5">
                         Vinculado a congregação
@@ -531,7 +575,9 @@ function AdminContent() {
               </div>
             ))}
           </div>
-        )}
+            );
+          })()
+        }
       </div>
 
       {editingUser && (

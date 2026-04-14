@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     const tokens = await generateTokenPair(user.id, user.role);
-    return NextResponse.json({ ...tokens, role: user.role, congregationId: user.congregationId ?? null });
+    return NextResponse.json({ ...tokens, role: user.role, congregationId: user.congregationId ?? null, name: user.name ?? null });
   } catch {
     return NextResponse.json(
       { error: "Erro interno do servidor" },

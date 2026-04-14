@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { authApi } from "@/lib/api";
+import AskNameModal from "./AskNameModal";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { accessToken, refreshToken, setTokens, logout } = useAuthStore();
+  const { accessToken, refreshToken, name, setTokens, logout } = useAuthStore();
   const router = useRouter();
   const [checking, setChecking] = useState(!accessToken && !!refreshToken);
 
@@ -27,7 +28,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     authApi
       .refresh(refreshToken)
       .then(({ data }) => {
-        setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId);
+        setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId, data.name);
       })
       .catch(() => {
         logout();
@@ -41,5 +42,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   if (checking) return null;
   if (!accessToken) return null;
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {!name && <AskNameModal />}
+    </>
+  );
 }

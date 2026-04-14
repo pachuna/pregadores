@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     select: {
       id: true,
       email: true,
+      name: true,
       role: true,
       congregationId: true,
       isBlocked: true,
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
       updatedAt: true,
       _count: { select: { revisits: true } },
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: { email: "asc" },
   });
 
   return NextResponse.json(users);

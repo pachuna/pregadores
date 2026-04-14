@@ -64,7 +64,7 @@ api.interceptors.response.use(
         refreshPromise = api
           .post<AuthTokens>("/api/auth/refresh", { refreshToken })
           .then(({ data }) => {
-            setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId);
+            setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId, data.name);
             return data;
           })
           .catch(() => {
@@ -99,6 +99,8 @@ export const authApi = {
     api.post<AuthTokens>("/api/auth/google", { idToken }),
   refresh: (refreshToken: string) =>
     api.post<AuthTokens>("/api/auth/refresh", { refreshToken }),
+  updateProfile: (name: string) =>
+    api.patch<{ ok: boolean; name: string }>("/api/auth/profile", { name }),
 };
 
 export const revisitsApi = {
@@ -150,6 +152,7 @@ export const presenceApi = {
 export interface AdminUser {
   id: string;
   email: string;
+  name: string | null;
   role: "ADMIN" | "ANCIAO" | "PUBLICADOR";
   congregationId: string | null;
   isBlocked: boolean;

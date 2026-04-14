@@ -1034,7 +1034,7 @@ function AdminCongregationsContent() {
                           <button
                             type="button"
                             onClick={() => setEditTarget(c)}
-                            className="btn-secondary text-xs py-1.5 px-3 shrink-0"
+                            className="btn-secondary text-xs py-1.5 px-3 shrink-0 flex items-center gap-1.5"
                             aria-label={`Editar ${c.name}`}
                             title="Editar congregação"
                           >
@@ -1042,13 +1042,14 @@ function AdminCongregationsContent() {
                               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
+                            Editar
                           </button>
 
                           {/* Botão apagar congregação */}
                           <button
                             type="button"
                             onClick={() => setDeleteTarget(c)}
-                            className="btn-secondary text-xs py-1.5 px-3 shrink-0"
+                            className="btn-secondary text-xs py-1.5 px-3 shrink-0 flex items-center gap-1.5"
                             style={{ color: "var(--color-danger)" }}
                             aria-label={`Apagar ${c.name}`}
                             title="Apagar congregação"
@@ -1056,6 +1057,7 @@ function AdminCongregationsContent() {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
                               <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                             </svg>
+                            Excluir
                           </button>
 
                           {/* Botão ver/ocultar membros */}

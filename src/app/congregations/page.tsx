@@ -353,11 +353,69 @@ function CongregationContent() {
         )}
 
         {!congregation && role === "PUBLICADOR" && (
-          <div className="card text-center py-8">
-            <p className="text-sm text-[var(--color-text-light)]">
-              Você ainda não foi vinculado a uma congregação.{"\n"}
-              Aguarde o Ancião vincular seu acesso.
-            </p>
+          <div className="flex flex-col gap-4">
+            <div className="card text-center py-6">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
+                style={{ background: "var(--color-primary-soft)" }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.5"
+                  className="w-6 h-6" aria-hidden="true">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </div>
+              <p className="text-sm text-[var(--color-text-light)] leading-relaxed">
+                Você ainda não foi vinculado a uma congregação.<br />
+                Aguarde o Ancião vincular seu acesso.
+              </p>
+            </div>
+
+            <div className="card py-5 px-4"
+              style={{ borderColor: "var(--color-primary)", borderWidth: "1px" }}>
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                  style={{ background: "var(--color-primary-soft)" }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.5"
+                    className="w-5 h-5" aria-hidden="true">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[var(--color-text)] mb-1">
+                    É Ancião e quer cadastrar sua congregação?
+                  </p>
+                  <p className="text-xs text-[var(--color-text-light)] leading-relaxed mb-3">
+                    Envie um e-mail para o administrador com os dados da sua congregação:
+                  </p>
+                  <ul className="text-xs text-[var(--color-text-light)] mb-3 flex flex-col gap-1 pl-1">
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-primary)" }} />
+                      Nome da congregação
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-primary)" }} />
+                      Estado
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-primary)" }} />
+                      Cidade
+                    </li>
+                  </ul>
+                  <a
+                    href="mailto:1FPaschuini@jwpub.org?subject=Cadastro%20de%20Congrega%C3%A7%C3%A3o&body=Nome%3A%20%0AEstado%3A%20%0ACidade%3A%20"
+                    className="btn-primary text-xs py-2 px-4 inline-flex items-center gap-2"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                      className="w-3.5 h-3.5" aria-hidden="true">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                    1FPaschuini@jwpub.org
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -432,7 +490,15 @@ function CongregationContent() {
                 {/* Conteúdo da aba */}
                 {tab === "publicadores" && (
                   <div>
-                    {congregation.members && congregation.members.length === 0 ? (
+                    {role === "PUBLICADOR" ? (
+                      /* Publicador: apenas total */
+                      <div className="card text-center py-6">
+                        <p className="text-3xl font-bold text-[var(--color-primary)]">
+                          {congregation._count?.members ?? congregation.members?.length ?? 0}
+                        </p>
+                        <p className="text-sm text-[var(--color-text-light)] mt-1">publicador(es) na congregação</p>
+                      </div>
+                    ) : congregation.members && congregation.members.length === 0 ? (
                       <p className="text-sm text-[var(--color-text-light)] text-center py-6">
                         Nenhum membro vinculado ainda.
                       </p>

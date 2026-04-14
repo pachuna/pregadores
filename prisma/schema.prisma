@@ -58,6 +58,7 @@ model PushSubscription {
 model User {
   id                    String             @id @default(cuid())
   email                 String             @unique
+  name                  String?
   passwordHash          String
   firebaseUid           String?            @unique
   role                  Role               @default(PUBLICADOR)

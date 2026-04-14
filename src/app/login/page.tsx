@@ -106,7 +106,7 @@ export default function LoginPage() {
           setGoogleLoading(true);
           try {
             const { data } = await authApi.google(credential);
-            setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId);
+            setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId, data.name);
             router.replace("/home");
           } catch (err: unknown) {
             const message =
@@ -168,7 +168,7 @@ export default function LoginPage() {
     setLoginLoading(true);
     try {
       const { data } = await authApi.login(email.trim(), password);
-      setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId);
+      setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId, data.name);
       router.replace("/home");
     } catch (err: unknown) {
       const message =
@@ -190,15 +190,14 @@ export default function LoginPage() {
     setRegisterLoading(true);
     try {
       const { data } = await authApi.register(email.trim(), password);
-      setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId);
+      setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId, data.name);
       router.replace("/home");
     } catch (err: unknown) {
       const message =
         typeof err === "object" &&
         err !== null &&
         "response" in err &&
-        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error ===
-          "string"
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
           ? (err as { response: { data: { error: string } } }).response.data.error
           : "Não foi possível criar sua conta.";
       setError(message);
