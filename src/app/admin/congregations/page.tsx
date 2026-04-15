@@ -782,6 +782,8 @@ function DeleteCongregationModal({ congregation, onClose, onDeleted }: DeleteCon
 function AdminCongregationsContent() {
   const role = useAuthStore((s) => s.role);
   const router = useRouter();
+  const logout = useAuthStore((s) => s.logout);
+  const handleLogout = () => { logout(); router.replace("/login"); };
   const [congregations, setCongregations] = useState<Congregation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -841,48 +843,50 @@ function AdminCongregationsContent() {
   return (
     <div className="mobile-page min-h-screen pb-24">
       {/* Header */}
-      <div
-        className="px-4 pt-10 pb-6"
-        style={{
-          background:
-            "linear-gradient(145deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-white/80 hover:text-white text-sm mb-4 transition-colors"
-          aria-label="Voltar"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-          Voltar
-        </button>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-white">Congregações</h1>
-            {pendingCount > 0 && (
-              <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full">
-                {pendingCount} pendente{pendingCount > 1 ? "s" : ""}
-              </span>
-            )}
+      <header className="mobile-header justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+            aria-label="Voltar"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <div className="min-w-0">
+            <p className="mobile-header__meta">Painel Admin</p>
+            <div className="flex items-center gap-2">
+              <h1 className="mobile-header__title">Congregações</h1>
+              {pendingCount > 0 && (
+                <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full shrink-0">
+                  {pendingCount}
+                </span>
+              )}
+            </div>
           </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 text-sm font-semibold text-white bg-white/20 hover:bg-white/30 transition-colors rounded-xl px-3 py-2"
+            className="flex items-center gap-1.5 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 transition-colors rounded-lg px-3 py-2 border border-white/20"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true">
               <path d="M12 5v14M5 12h14" />
             </svg>
             Nova
           </button>
+          <button
+            className="text-sm w-auto px-3 py-2 rounded-lg border border-white/35 text-white font-semibold bg-white/10 hover:bg-white/20 transition-colors"
+            onClick={handleLogout}
+            type="button"
+          >
+            Sair
+          </button>
         </div>
-        <p className="text-white/70 text-sm mt-1">
-          {congregations.length} congregação{congregations.length !== 1 ? "s" : ""} cadastrada{congregations.length !== 1 ? "s" : ""}
-        </p>
-      </div>
+      </header>
 
       <div className="px-4 pt-5">
         {error && (

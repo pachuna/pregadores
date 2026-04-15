@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import { useAuthStore } from "@/store/authStore";
 import { pioneerApi, type PioneerReport } from "@/lib/api";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -134,6 +136,10 @@ function Counter({
 
 function PioneerContent() {
   const now = new Date();
+  const router = useRouter();
+  const name = useAuthStore((s) => s.name);
+  const logout = useAuthStore((s) => s.logout);
+  const handleLogout = () => { logout(); router.replace("/login"); };
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [selected, setSelected] = useState(todayStr());
@@ -353,33 +359,34 @@ function PioneerContent() {
       )}
 
       {/* ── Header ── */}
-      <div
-        className="px-4 pt-10 pb-4"
-        style={{ background: "linear-gradient(145deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)" }}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Pioneiro</h1>
-            <p className="text-white/60 text-xs mt-0.5">Relatório de serviço</p>
-          </div>
-          <div className="text-right">
-            <p className="text-white font-bold text-xl">{totH}h{totM > 0 ? ` ${totM}min` : ""}</p>
-            <p className="text-white/60 text-xs">total do mês</p>
-          </div>
+      <header className="mobile-header justify-between">
+        <div>
+          <p className="mobile-header__meta">Pioneiro</p>
+          <h1 className="mobile-header__title">{name ?? "Relatório de serviço"}</h1>
         </div>
+        <button
+          className="text-sm w-auto px-3 py-2 rounded-lg border border-white/35 text-white font-semibold bg-white/10 hover:bg-white/20 transition-colors"
+          onClick={handleLogout}
+          type="button"
+        >
+          Sair
+        </button>
+      </header>
 
-        {/* Month nav */}
-        <div className="flex items-center justify-between">
-          <button type="button" onClick={prevMonth} aria-label="Mês anterior"
-            className="w-8 h-8 flex items-center justify-center rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <span className="text-white font-semibold text-base">{MONTHS[month - 1]} {year}</span>
-          <button type="button" onClick={nextMonth} aria-label="Próximo mês"
-            className="w-8 h-8 flex items-center justify-center rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
+      {/* Month nav */}
+      <div className="flex items-center justify-between px-4 py-2" style={{ background: "var(--color-surface-elevated)", borderBottom: "1px solid var(--color-border)" }}>
+        <button type="button" onClick={prevMonth} aria-label="Mês anterior"
+          className="w-8 h-8 flex items-center justify-center rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div className="text-center">
+          <span className="text-[var(--color-text)] font-semibold text-base">{MONTHS[month - 1]} {year}</span>
+          <p className="text-xs text-[var(--color-text-light)] mt-0.5">{totH}h{totM > 0 ? ` ${totM}min` : ""} no mês</p>
         </div>
+        <button type="button" onClick={nextMonth} aria-label="Próximo mês"
+          className="w-8 h-8 flex items-center justify-center rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
       </div>
 
       {/* ── Calendar ── */}

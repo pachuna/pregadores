@@ -326,7 +326,10 @@ function SendPushModal({ onClose }: { onClose: () => void }) {
 
 function AdminContent() {
   const role = useAuthStore((s) => s.role);
+  const name = useAuthStore((s) => s.name);
+  const logout = useAuthStore((s) => s.logout);
   const router = useRouter();
+  const handleLogout = () => { logout(); router.replace("/login"); };
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -385,24 +388,19 @@ function AdminContent() {
   return (
     <div className="mobile-page min-h-screen pb-24">
       {/* Header */}
-      <div
-        className="px-4 pt-10 pb-6"
-        style={{ background: "linear-gradient(145deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)" }}
-      >
+      <header className="mobile-header justify-between">
+        <div>
+          <p className="mobile-header__meta">Painel Admin</p>
+          <h1 className="mobile-header__title">{name ?? "Administrador"}</h1>
+        </div>
         <button
+          className="text-sm w-auto px-3 py-2 rounded-lg border border-white/35 text-white font-semibold bg-white/10 hover:bg-white/20 transition-colors"
+          onClick={handleLogout}
           type="button"
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-white/80 hover:text-white text-sm mb-4 transition-colors"
-          aria-label="Voltar"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-          Voltar
+          Sair
         </button>
-        <h1 className="text-2xl font-bold text-white">Painel de Admin</h1>
-        <p className="text-white/70 text-sm mt-1">Gerenciamento de usuários</p>
-      </div>
+      </header>
 
       <div className="px-4 pt-5">
         {/* Quick links */}

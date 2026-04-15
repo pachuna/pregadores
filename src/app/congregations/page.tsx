@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import AuthGuard from "@/components/AuthGuard";
 import CongregationRequestForm from "@/components/CongregationRequestForm";
@@ -564,8 +565,12 @@ function TerritoriesTab({ congregationId, role }: { congregationId: string; role
 // ── Main Content ──────────────────────────────────────────────────────────────
 
 function CongregationContent() {
+  const router = useRouter();
   const role = useAuthStore((s) => s.role);
   const congregationId = useAuthStore((s) => s.congregationId);
+  const name = useAuthStore((s) => s.name);
+  const logout = useAuthStore((s) => s.logout);
+  const handleLogout = () => { logout(); router.replace("/login"); };
   const [congregation, setCongregation] = useState<Congregation | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -624,13 +629,21 @@ function CongregationContent() {
   return (
     <div className="mobile-page min-h-screen pb-24">
       {/* Header */}
-      <div className="px-4 pt-10 pb-5"
-        style={{ background: "linear-gradient(145deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)" }}>
-        <h1 className="text-2xl font-bold text-white">Minha Congregação</h1>
-        <p className="text-white/70 text-sm mt-1">
-          {congregation ? congregation.name : "Nenhuma congregação vinculada"}
-        </p>
-      </div>
+      <header className="mobile-header justify-between">
+        <div>
+          <p className="mobile-header__meta">Minha Congregação</p>
+          <h1 className="mobile-header__title">
+            {congregation ? congregation.name : (name ?? "Congregação")}
+          </h1>
+        </div>
+        <button
+          className="text-sm w-auto px-3 py-2 rounded-lg border border-white/35 text-white font-semibold bg-white/10 hover:bg-white/20 transition-colors"
+          onClick={handleLogout}
+          type="button"
+        >
+          Sair
+        </button>
+      </header>
 
       <div className="px-4 pt-4">
         {successMsg && (
