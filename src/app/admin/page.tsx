@@ -338,6 +338,7 @@ function AdminContent() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showPushModal, setShowPushModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showUsers, setShowUsers] = useState(false);
 
   useEffect(() => {
     if (role && role !== "ADMIN") router.replace("/home");
@@ -403,7 +404,74 @@ function AdminContent() {
       </header>
 
       <div className="px-4 pt-5">
-        {/* Quick links */}
+
+        {/* ── Stats pills ──────────────────────────────────────────────── */}
+        <div className="grid grid-cols-4 gap-2 mb-5">
+          {/* Publicador */}
+          <div className="flex flex-col items-center gap-1.5 rounded-2xl py-3 px-2"
+            style={{ background: "var(--color-surface-card)", border: "1px solid var(--color-border)" }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(34,197,94,0.12)" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold leading-none" style={{ color: "#4ade80" }}>
+              {users.filter((u) => u.role === "PUBLICADOR").length}
+            </span>
+            <span className="text-[10px] text-center leading-tight text-[var(--color-text-light)]">Publicador</span>
+          </div>
+
+          {/* Servo de Campo */}
+          <div className="flex flex-col items-center gap-1.5 rounded-2xl py-3 px-2"
+            style={{ background: "var(--color-surface-card)", border: "1px solid var(--color-border)" }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(168,85,247,0.12)" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#c084fc" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold leading-none" style={{ color: "#c084fc" }}>
+              {users.filter((u) => u.role === "SERVO_DE_CAMPO").length}
+            </span>
+            <span className="text-[10px] text-center leading-tight text-[var(--color-text-light)]">S. Campo</span>
+          </div>
+
+          {/* Ancião */}
+          <div className="flex flex-col items-center gap-1.5 rounded-2xl py-3 px-2"
+            style={{ background: "var(--color-surface-card)", border: "1px solid var(--color-border)" }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(37,99,255,0.12)" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold leading-none" style={{ color: "#60a5fa" }}>
+              {users.filter((u) => u.role === "ANCIAO").length}
+            </span>
+            <span className="text-[10px] text-center leading-tight text-[var(--color-text-light)]">Ancião</span>
+          </div>
+
+          {/* Admin */}
+          <div className="flex flex-col items-center gap-1.5 rounded-2xl py-3 px-2"
+            style={{ background: "var(--color-surface-card)", border: "1px solid var(--color-border)" }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(239,68,68,0.12)" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold leading-none" style={{ color: "#f87171" }}>
+              {users.filter((u) => u.role === "ADMIN").length}
+            </span>
+            <span className="text-[10px] text-center leading-tight text-[var(--color-text-light)]">Admin</span>
+          </div>
+        </div>
+
+        {/* ── Menu de ações ────────────────────────────────────────────── */}
         <div className="flex flex-col gap-3 mb-5">
           <Link
             href="/admin/congregations"
@@ -449,136 +517,164 @@ function AdminContent() {
               <path d="M9 18l6-6-6-6" />
             </svg>
           </button>
-        </div>
 
-        {/* Stats bar */}
-        <div className="grid grid-cols-4 gap-2 mb-6">
-          {(["PUBLICADOR", "SERVO_DE_CAMPO", "ANCIAO", "ADMIN"] as RoleOption[]).map((r) => (
-            <div key={r} className="card flex flex-col items-center justify-center text-center py-3 px-1.5" style={{ borderColor: "var(--color-border)" }}>
-              <span className="text-2xl font-bold text-[var(--color-primary)] leading-none">
-                {users.filter((u) => u.role === r).length}
-              </span>
-              <p className="text-[10px] leading-tight text-[var(--color-text-light)] mt-1 w-full overflow-hidden text-ellipsis" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", whiteSpace: "normal" }}>{ROLE_LABELS[r]}</p>
+          <button
+            type="button"
+            onClick={() => setShowUsers((v) => !v)}
+            className="flex items-center justify-between p-4 rounded-2xl border w-full text-left transition-colors"
+            style={{
+              borderColor: showUsers ? "var(--color-primary)" : "var(--color-border)",
+              background: showUsers ? "var(--color-primary-soft)" : "var(--color-surface-card)",
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: showUsers ? "var(--color-primary)" : "rgba(99,102,241,0.15)" }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke={showUsers ? "#fff" : "#818cf8"} strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-[var(--color-text)]">Usuários</p>
+                <p className="text-xs text-[var(--color-text-light)] mt-0.5">
+                  {users.length > 0 ? `${users.length} usuários cadastrados` : "Gerenciar contas e perfis"}
+                </p>
+              </div>
             </div>
-          ))}
-        </div>
-
-        {error && (
-          <div className="rounded-xl p-3 mb-4 text-sm text-center" style={{ background: "rgba(239,68,68,0.1)", color: "var(--color-danger)", border: "1px solid rgba(239,68,68,0.3)" }}>
-            {error}
-          </div>
-        )}
-
-        {/* Filtro de busca */}
-        {!loading && users.length > 0 && (
-          <div className="relative mb-4">
             <svg
               viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-              style={{ color: "var(--color-text-light)" }}
+              className="w-5 h-5 text-[var(--color-primary)] transition-transform"
+              style={{ transform: showUsers ? "rotate(90deg)" : "rotate(0deg)" }}
               aria-hidden="true"
             >
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
+              <path d="M9 18l6-6-6-6" />
             </svg>
-            <input
-              type="search"
-              className="input pl-9"
-              placeholder="Buscar por nome ou email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              aria-label="Filtrar usuários"
-            />
+          </button>
+        </div>
+
+        {/* ── Seção Usuários (expansível) ───────────────────────────────── */}
+        {showUsers && (
+          <div>
+            {error && (
+              <div className="rounded-xl p-3 mb-4 text-sm text-center" style={{ background: "rgba(239,68,68,0.1)", color: "var(--color-danger)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                {error}
+              </div>
+            )}
+
+            {!loading && users.length > 0 && (
+              <div className="relative mb-4">
+                <svg
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                  style={{ color: "var(--color-text-light)" }}
+                  aria-hidden="true"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="M21 21l-4.35-4.35" />
+                </svg>
+                <input
+                  type="search"
+                  className="input pl-9"
+                  placeholder="Buscar por nome ou email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Filtrar usuários"
+                />
+              </div>
+            )}
+
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: "var(--color-primary)", borderTopColor: "transparent" }} />
+              </div>
+            ) : users.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-[var(--color-text-light)]">Nenhum usuário encontrado.</p>
+              </div>
+            ) : (() => {
+                const q = searchQuery.trim().toLowerCase();
+                const filtered = q
+                  ? users.filter((u) =>
+                      u.email.toLowerCase().includes(q) ||
+                      (u.name ?? "").toLowerCase().includes(q)
+                    )
+                  : users;
+                const sorted = [...filtered].sort((a, b) => {
+                  const nameA = (a.name ?? a.email).toLowerCase();
+                  const nameB = (b.name ?? b.email).toLowerCase();
+                  return nameA.localeCompare(nameB, "pt-BR");
+                });
+                return sorted.length === 0 ? (
+                  <div className="text-center py-10">
+                    <p className="text-[var(--color-text-light)] text-sm">Nenhum usuário encontrado para &ldquo;{searchQuery}&rdquo;.</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3 pb-6">
+                    {sorted.map((user) => (
+                      <div
+                        key={user.id}
+                        className="card"
+                        style={{ borderColor: user.isBlocked ? "var(--color-danger)" : "var(--color-border)", opacity: user.isBlocked ? 0.75 : 1 }}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0">
+                            {user.name && (
+                              <p className="font-semibold text-[var(--color-text)] text-sm truncate">{user.name}</p>
+                            )}
+                            <p className="font-medium text-[var(--color-text-light)] text-xs truncate">{user.email}</p>
+                            {user.congregationId && (
+                              <p className="text-xs text-[var(--color-text-light)] truncate mt-0.5">
+                                Vinculado a congregação
+                              </p>
+                            )}
+                          </div>
+                          <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${ROLE_COLORS[user.role]}`}>
+                            {ROLE_LABELS[user.role]}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3 text-xs text-[var(--color-text-light)] mb-3 overflow-hidden">
+                          <span className="whitespace-nowrap">{user._count.revisits} revisitas</span>
+                          <span>·</span>
+                          <span className="whitespace-nowrap">Desde {new Date(user.createdAt).toLocaleDateString("pt-BR")}</span>
+                          {user.isBlocked && <><span>·</span><span className="font-semibold text-red-600 whitespace-nowrap">BLOQUEADO</span></>}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => setEditingUser(user)} className="btn-secondary text-xs py-1.5 px-3 flex-1">
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmAction({ type: user.isBlocked ? "unblock" : "block", user })}
+                            className="btn-secondary text-xs py-1.5 px-3 flex-1"
+                            style={user.isBlocked ? { color: "var(--color-success, #16a34a)" } : { color: "var(--color-warning, #b45309)" }}
+                          >
+                            {user.isBlocked ? "Desbloquear" : "Bloquear"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmAction({ type: "delete", user })}
+                            className="btn-secondary text-xs py-1.5 px-3 shrink-0"
+                            style={{ color: "var(--color-danger)", width: "auto" }}
+                            aria-label={`Excluir ${user.email}`}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()
+            }
           </div>
         )}
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: "var(--color-primary)", borderTopColor: "transparent" }} />
-          </div>
-        ) : users.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-[var(--color-text-light)]">Nenhum usuário encontrado.</p>
-          </div>
-        ) : (() => {
-            const q = searchQuery.trim().toLowerCase();
-            const filtered = q
-              ? users.filter((u) =>
-                  u.email.toLowerCase().includes(q) ||
-                  (u.name ?? "").toLowerCase().includes(q)
-                )
-              : users;
-            const sorted = [...filtered].sort((a, b) => {
-              const nameA = (a.name ?? a.email).toLowerCase();
-              const nameB = (b.name ?? b.email).toLowerCase();
-              return nameA.localeCompare(nameB, "pt-BR");
-            });
-            return sorted.length === 0 ? (
-              <div className="text-center py-10">
-                <p className="text-[var(--color-text-light)] text-sm">Nenhum usuário encontrado para &ldquo;{searchQuery}&rdquo;.</p>
-              </div>
-            ) : (
-          <div className="flex flex-col gap-3">
-            {sorted.map((user) => (
-              <div
-                key={user.id}
-                className="card"
-                style={{ borderColor: user.isBlocked ? "var(--color-danger)" : "var(--color-border)", opacity: user.isBlocked ? 0.75 : 1 }}
-              >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="min-w-0">
-                    {user.name && (
-                      <p className="font-semibold text-[var(--color-text)] text-sm truncate">{user.name}</p>
-                    )}
-                    <p className="font-medium text-[var(--color-text-light)] text-xs truncate">{user.email}</p>
-                    {user.congregationId && (
-                      <p className="text-xs text-[var(--color-text-light)] truncate mt-0.5">
-                        Vinculado a congregação
-                      </p>
-                    )}
-                  </div>
-                  <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${ROLE_COLORS[user.role]}`}>
-                    {ROLE_LABELS[user.role]}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3 text-xs text-[var(--color-text-light)] mb-3 overflow-hidden">
-                  <span className="whitespace-nowrap">{user._count.revisits} revisitas</span>
-                  <span>·</span>
-                  <span className="whitespace-nowrap">Desde {new Date(user.createdAt).toLocaleDateString("pt-BR")}</span>
-                  {user.isBlocked && <><span>·</span><span className="font-semibold text-red-600 whitespace-nowrap">BLOQUEADO</span></>}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => setEditingUser(user)} className="btn-secondary text-xs py-1.5 px-3 flex-1">
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmAction({ type: user.isBlocked ? "unblock" : "block", user })}
-                    className="btn-secondary text-xs py-1.5 px-3 flex-1"
-                    style={user.isBlocked ? { color: "var(--color-success, #16a34a)" } : { color: "var(--color-warning, #b45309)" }}
-                  >
-                    {user.isBlocked ? "Desbloquear" : "Bloquear"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmAction({ type: "delete", user })}
-                    className="btn-secondary text-xs py-1.5 px-3 shrink-0"
-                    style={{ color: "var(--color-danger)", width: "auto" }}
-                    aria-label={`Excluir ${user.email}`}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
-                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-            );
-          })()
-        }
       </div>
 
       {editingUser && (
