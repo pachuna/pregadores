@@ -1,4 +1,4 @@
-const CACHE_NAME = "pregadores-v3";
+const CACHE_NAME = "pregadores-v4";
 const STATIC_ASSETS = ["/", "/login", "/manifest.json", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"];
 
 self.addEventListener("install", (event) => {
@@ -19,7 +19,15 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  if (request.method !== "GET" || url.pathname.startsWith("/api/")) {
+  const isSameOrigin = url.origin === self.location.origin;
+  const isNextAsset = url.pathname.startsWith("/_next/");
+
+  if (
+    request.method !== "GET" ||
+    !isSameOrigin ||
+    url.pathname.startsWith("/api/") ||
+    isNextAsset
+  ) {
     return;
   }
 
