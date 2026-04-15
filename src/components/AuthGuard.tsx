@@ -18,9 +18,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Sem nenhum token — vai para login
+    // Sem nenhum token — vai para login preservando a URL de origem
     if (!refreshToken) {
-      router.replace("/login");
+      const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+      router.replace(`/login?redirect=${redirect}`);
       return;
     }
 
@@ -32,7 +33,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {
         logout();
-        router.replace("/login");
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        router.replace(`/login?redirect=${redirect}`);
       })
       .finally(() => {
         setChecking(false);

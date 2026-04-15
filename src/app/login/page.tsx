@@ -45,9 +45,15 @@ export default function LoginPage() {
   const setTokens = useAuthStore((s) => s.setTokens);
   const router = useRouter();
 
+  const getRedirect = () => {
+    if (typeof window === "undefined") return "/home";
+    const r = new URLSearchParams(window.location.search).get("redirect");
+    return r && r.startsWith("/") ? r : "/home";
+  };
+
   useEffect(() => {
     if (accessToken) {
-      router.replace("/home");
+      router.replace(getRedirect());
     }
   }, [accessToken, router]);
 
@@ -107,7 +113,7 @@ export default function LoginPage() {
           try {
             const { data } = await authApi.google(credential);
             setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId, data.name);
-            router.replace("/home");
+            router.replace(getRedirect());
           } catch (err: unknown) {
             const message =
               typeof err === "object" &&
@@ -169,7 +175,7 @@ export default function LoginPage() {
     try {
       const { data } = await authApi.login(email.trim(), password);
       setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId, data.name);
-      router.replace("/home");
+      router.replace(getRedirect());
     } catch (err: unknown) {
       const message =
         typeof err === "object" &&
@@ -191,7 +197,7 @@ export default function LoginPage() {
     try {
       const { data } = await authApi.register(email.trim(), password);
       setTokens(data.accessToken, data.refreshToken, data.role, data.congregationId, data.name);
-      router.replace("/home");
+      router.replace(getRedirect());
     } catch (err: unknown) {
       const message =
         typeof err === "object" &&
