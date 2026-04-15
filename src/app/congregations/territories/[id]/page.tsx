@@ -428,13 +428,18 @@ function TerritoryDetailContent() {
       </div>
 
       {/* Imagem do território */}
-      {territory.imageUrl && (
+      {(territory.imageUrl || territory.number) && (
         <div className="relative w-full" style={{ aspectRatio: "16/9", background: "var(--color-surface-card)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={territory.imageUrl}
+            src={territory.imageUrl || `/territorios/${territory.number}.png`}
             alt={`Mapa do Território ${territory.label ?? territory.number}`}
             className="w-full h-full object-contain"
+            onError={(e) => {
+              // Se não existe nenhuma imagem, esconde o container
+              const parent = e.currentTarget.parentElement;
+              if (parent) parent.style.display = "none";
+            }}
           />
         </div>
       )}

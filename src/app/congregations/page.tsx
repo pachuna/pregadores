@@ -179,25 +179,27 @@ function TerritoryCard({
                 className="w-full h-full object-contain"
                 loading="lazy"
               />
-            ) : territory.territoryType === "IMAGE" ? (
-              // Legado Firestore: imagem por número
+            ) : (
+              // Sem imageUrl: tenta imagem legado por número, com fallback SVG via onError
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={`/territorios/${territory.number}.png`}
-                alt={`Território ${territory.number}`}
+                alt={`Território ${territory.label ?? territory.number}`}
                 className="w-full h-full object-contain"
                 loading="lazy"
+                onError={(e) => {
+                  // Se a imagem legado não existe, substitui por placeholder SVG
+                  const target = e.currentTarget;
+                  const parent = target.parentElement;
+                  if (parent) {
+                    const placeholder = document.createElement("div");
+                    placeholder.className = "w-full h-full flex items-center justify-center";
+                    placeholder.style.background = `${territory.color}22`;
+                    placeholder.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="${territory.color}" stroke-width="1.5" class="w-10 h-10 opacity-60" aria-hidden="true"><path d="M3 6.5L8.5 4L15.5 6.5L21 4V17.5L15.5 20L8.5 17.5L3 20V6.5Z"/><path d="M8.5 4V17.5"/><path d="M15.5 6.5V20"/></svg>`;
+                    parent.replaceChild(placeholder, target);
+                  }
+                }}
               />
-            ) : (
-              // Território por ruas: placeholder
-              <div className="w-full h-full flex items-center justify-center"
-                style={{ background: `${territory.color}22` }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke={territory.color} strokeWidth="1.5"
-                  className="w-10 h-10 opacity-60" aria-hidden="true">
-                  <path d="M3 6.5L8.5 4L15.5 6.5L21 4V17.5L15.5 20L8.5 17.5L3 20V6.5Z" />
-                  <path d="M8.5 4V17.5" /><path d="M15.5 6.5V20" />
-                </svg>
-              </div>
             )}
             {/* Badge rótulo */}
             <div
