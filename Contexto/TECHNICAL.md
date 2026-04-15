@@ -28,7 +28,7 @@
 
 **Variáveis de ambiente críticas (VPS `.env.production`):**
 - `JWT_SECRET`, `JWT_REFRESH_SECRET`
-- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
 - `ADMIN_EMAIL`
 - `GOOGLE_CLIENT_ID`, `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
 - `DATABASE_URL`
@@ -266,6 +266,10 @@ Falha no refresh → logout() + redirect /login?reason=session-expired
 | DELETE | `/api/push/subscribe` | Autenticado | Remove subscription |
 | POST | `/api/push/send` | ADMIN | Envia push manual |
 
+Pré-requisito de ambiente:
+- `VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY` no servidor
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY` no cliente (mesmo valor de `VAPID_PUBLIC_KEY`)
+
 ### 4.7 Outras
 
 | Método | Rota | Permissão | Descrição |
@@ -308,11 +312,11 @@ Falha no refresh → logout() + redirect /login?reason=session-expired
 
 ## 6. Service Worker (`public/sw.js`)
 
-- **Cache**: `pregadores-v3` — caches assets estáticos + páginas visitadas
+- **Cache**: `pregadores-v4` — caches assets estáticos + páginas visitadas
 - **Estratégia**: Network-first com fallback para cache; `/api/` nunca é cacheado
 - **Push handler**: recebe `{ title, body, url }` — exibe `showNotification`
 - **Notification click**: navega para `data.url` — abre janela existente ou nova
-- **Atualização de versão**: mudar `CACHE_NAME` para `pregadores-v4` força re-instalação
+- **Atualização de versão**: mudar `CACHE_NAME` para `pregadores-v5` força re-instalação
 
 ---
 
@@ -482,12 +486,17 @@ Solução (handleBack em territories/[id]/page.tsx):
 - CSP em `next.config.ts`: report-only no dev e enforcement em produção
 - Migrations rodadas com `npx prisma migrate deploy` (nunca `migrate dev` em produção)
 - Service Worker: ao mudar `CACHE_NAME`, usuários recebem novo SW no próximo acesso
+- Deploy seguro precisa aplicar migrations antes do restart e validar `/api/auth/login` localmente para detectar erro de schema imediatamente
 
-**Comando de deploy completo:**
+**Deploy recomendado:**
 ```powershell
 & "C:\Program Files\PuTTY\plink.exe" -batch -pw $env:VPS_SENHA "$env:VPS_USER@$env:VPS_IP" `
-  "cd /var/www/pregadores && git pull origin main && npm install --omit=dev && npx prisma migrate deploy && npm run build && pm2 restart pregadores-web && echo DEPLOY_OK"
+  "cd /var/www/pregadores && bash atualizar-vps.sh"
 ```
+
+Evitar em produção:
+- `npm install --omit=dev` antes de build e migration, porque o fluxo usa Prisma CLI e precisa do ambiente completo de build
+- restart manual sem smoke test mínimo após migration/build
 
 ---
 

@@ -4,9 +4,33 @@ import { prisma } from "./prisma";
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY ?? "";
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY ?? "";
 const VAPID_MAILTO = `mailto:${process.env.ADMIN_EMAIL ?? "admin@example.com"}`;
+let pushConfigured = false;
+let warnedMissingConfig = false;
 
 if (VAPID_PUBLIC && VAPID_PRIVATE) {
-  webpush.setVapidDetails(VAPID_MAILTO, VAPID_PUBLIC, VAPID_PRIVATE);
+  try {
+    webpush.setVapidDetails(VAPID_MAILTO, VAPID_PUBLIC, VAPID_PRIVATE);
+    pushConfigured = true;
+  } catch (error) {
+    console.error("[push] Falha ao configurar VAPID.", error);
+  }
+}
+
+function canSendPush(): boolean {
+  if (pushConfigured) return true;
+
+  if (!warnedMissingConfig) {
+    warnedMissingConfig = true;
+    console.warn(
+      "[push] Push desativado: configure VAPID_PUBLIC_KEY e VAPID_PRIVATE_KEY no ambiente do servidor."
+    );
+  }
+
+  return false;
+}
+
+function maskEndpoint(endpoint: string): string {
+  return endpoint.length <= 48 ? endpoint : `${endpoint.slice(0, 48)}...`;
 }
 
 export interface PushPayload {
@@ -89,6 +113,9 @@ async function sendToSubscriptions(
   subs: Array<{ id: string; endpoint: string; p256dh: string; auth: string }>,
   payload: PushPayload
 ): Promise<void> {
+  if (subs.length === 0) return;
+  if (!canSendPush()) return;
+
   const message = JSON.stringify(payload);
   const staleIds: string[] = [];
 
@@ -100,16 +127,24 @@ async function sendToSubscriptions(
           message
         );
       } catch (err: unknown) {
-        // 410 Gone = subscription expirada
-        if (
+        const statusCode =
           typeof err === "object" &&
           err !== null &&
           "statusCode" in err &&
-          ((err as { statusCode: number }).statusCode === 410 ||
-            (err as { statusCode: number }).statusCode === 404)
-        ) {
+          typeof (err as { statusCode?: unknown }).statusCode === "number"
+            ? (err as { statusCode: number }).statusCode
+            : undefined;
+
+        // 410 Gone = subscription expirada
+        if (statusCode === 410 || statusCode === 404) {
           staleIds.push(sub.id);
+          return;
         }
+
+        console.error("[push] Falha ao enviar notificacao.", {
+          statusCode: statusCode ?? "unknown",
+          endpoint: maskEndpoint(sub.endpoint),
+        });
       }
     })
   );
