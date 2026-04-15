@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authenticateRequest } from "@/lib/auth-middleware";
-import { notifyUser } from "@/lib/push";
+import { notifyByRolesInCongregation } from "@/lib/push";
 
 /**
  * GET /api/congregations/[id]/join
@@ -107,30 +107,20 @@ export async function POST(
     update: { status: "PENDING", rejectionReason: null },
   });
 
-  // Notifica ANCIÃO e SERVO_DE_CAMPO desta congregação + todos os ADMINs
+  // Notifica via Push: ANCIÃO e SERVO_DE_CAMPO desta congregação + todos os ADMINs
   try {
-    const [leaders, admins] = await Promise.all([
-      prisma.user.findMany({
-        where: { congregationId, role: { in: ["ANCIAO", "SERVO_DE_CAMPO"] } },
-        select: { id: true },
-      }),
-      prisma.user.findMany({
-        where: { role: "ADMIN" },
-        select: { id: true },
-      }),
-    ]);
-    const targets = [...new Map([...leaders, ...admins].map((u) => [u.id, u])).values()];
-    await Promise.allSettled(
-      targets.map((l) =>
-        notifyUser(l.id, {
-          title: "Nova solicitação de entrada",
-          body: `${user.name} quer entrar na congregação ${congregation.name}.`,
-          url: "/congregations",
-        })
-      )
+    await notifyByRolesInCongregation(
+      congregationId,
+      ["ANCIAO", "SERVO_DE_CAMPO"],
+      {
+        title: "Nova solicitação de entrada",
+        body: `${user.name} quer entrar na congregação ${congregation.name}.`,
+        url: "/congregations",
+      }
     );
-  } catch {
-    // notificação não é crítica
+  } catch (err) {
+    console.error("[join/POST] falha ao enviar push notification:", err);
+    // notificação não é crítica — não bloqueia a resposta
   }
 
   return NextResponse.json(joinRequest, { status: 201 });

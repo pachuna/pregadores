@@ -44,6 +44,26 @@ export async function notifyByCongregation(
 }
 
 /**
+ * Envia push notification para usuários de determinadas roles DENTRO de uma congregação,
+ * mais todos os ADMINs globais — único query no banco.
+ */
+export async function notifyByRolesInCongregation(
+  congregationId: string,
+  roles: Array<"ANCIAO" | "SERVO_DE_CAMPO" | "PUBLICADOR">,
+  payload: PushPayload
+): Promise<void> {
+  const subs = await prisma.pushSubscription.findMany({
+    where: {
+      OR: [
+        { user: { congregationId, role: { in: roles } } },
+        { user: { role: "ADMIN" } },
+      ],
+    },
+  });
+  await sendToSubscriptions(subs, payload);
+}
+
+/**
  * Envia push notification para todos os usuários (todas as roles).
  */
 export async function notifyAll(payload: PushPayload): Promise<void> {
