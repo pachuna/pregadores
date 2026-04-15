@@ -89,7 +89,7 @@ function QuickAction({ label, icon, accent, onClick }: QuickActionProps) {
       onClick={onClick}
       className={`rounded-2xl border px-4 py-4 flex flex-col items-start gap-2 transition-all active:scale-[0.97] shadow-sm ${
         accent
-          ? "bg-[var(--color-accent)] border-[var(--color-accent)] text-white"
+          ? "bg-[#2563ff] border-[#2563ff] text-white"
           : "bg-[var(--color-surface-card)] border-[var(--color-border)] text-[var(--color-text)]"
       }`}
     >
