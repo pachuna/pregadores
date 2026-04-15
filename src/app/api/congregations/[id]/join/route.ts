@@ -56,19 +56,20 @@ export async function POST(
 
   const { id: congregationId } = await params;
 
+  // Busca nome e congregação atual do usuário
+  const user = await prisma.user.findUnique({
+    where: { id: auth.userId },
+    select: { name: true, congregationId: true },
+  });
+
   // Usuário não pode pedir entrada se já tem congregação
-  if (auth.congregationId) {
+  if (user?.congregationId) {
     return NextResponse.json(
       { error: "Você já está vinculado a uma congregação." },
       { status: 409 }
     );
   }
 
-  // Verifica se o usuário tem nome
-  const user = await prisma.user.findUnique({
-    where: { id: auth.userId },
-    select: { name: true },
-  });
   if (!user?.name) {
     return NextResponse.json(
       { error: "Você precisa definir seu nome antes de solicitar entrada." },
