@@ -557,7 +557,7 @@ function TerritoryDetailContent() {
       {editOpen && territory && (
         <EditTerritoryModal
           territoryId={territory.id}
-          initialStreets={territory.streets.map((s) => ({ id: s.id, name: s.name }))}
+          initialStreets={territory.streets}
           onClose={() => setEditOpen(false)}
           onUpdated={load}
         />

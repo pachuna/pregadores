@@ -177,6 +177,26 @@ export const adminApi = {
 
 // ── Congregações ─────────────────────────────────────────────────────────────
 
+export interface ActiveCongregation {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+}
+
+export interface CongregationJoinRequest {
+  id: string;
+  userId: string;
+  congregationId: string;
+  congregationName: string;
+  congregationCity: string;
+  congregationState: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  rejectionReason?: string | null;
+  user?: { id: string; email: string; name: string | null };
+  createdAt: string;
+}
+
 export interface CongregationMember {
   id: string;
   email: string;
@@ -302,6 +322,12 @@ export const territoriesApi = {
       `/api/territories/${id}/share`,
       { target }
     ),
+  addHouse: (territoryId: string, streetId: string, data: { number: string; observation?: string }) =>
+    api.post<TerritoryHouse>(`/api/territories/${territoryId}/streets/${streetId}/houses`, data),
+  updateHouse: (territoryId: string, streetId: string, houseId: string, data: { number?: string; observation?: string }) =>
+    api.patch<TerritoryHouse>(`/api/territories/${territoryId}/streets/${streetId}/houses/${houseId}`, data),
+  deleteHouse: (territoryId: string, streetId: string, houseId: string) =>
+    api.delete(`/api/territories/${territoryId}/streets/${streetId}/houses/${houseId}`),
 };
 
 export const pioneerApi = {
@@ -339,6 +365,28 @@ export const congregationsApi = {
   delete: (id: string) =>
     api.delete<{ ok: boolean; message: string; membersUnlinked: number; territoriesRemoved: number }>(
       `/api/congregations/${id}`
+    ),
+  listActive: () =>
+    api.get<{ congregations: ActiveCongregation[]; pendingRequest: CongregationJoinRequest | null }>(
+      "/api/congregations/active"
+    ),
+  requestJoin: (congregationId: string) =>
+    api.post<CongregationJoinRequest>(`/api/congregations/${congregationId}/join`),
+  cancelJoin: (congregationId: string, requestId: string) =>
+    api.delete(`/api/congregations/${congregationId}/join/${requestId}`),
+  listJoinRequests: (congregationId: string) =>
+    api.get<Array<CongregationJoinRequest & { user: { id: string; email: string; name: string | null } }>>(
+      `/api/congregations/${congregationId}/join`
+    ),
+  respondJoin: (
+    congregationId: string,
+    requestId: string,
+    action: "approve" | "reject",
+    rejectionReason?: string
+  ) =>
+    api.patch<{ ok: boolean; action: string }>(
+      `/api/congregations/${congregationId}/join/${requestId}`,
+      { action, rejectionReason }
     ),
 };
 

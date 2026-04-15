@@ -13,6 +13,8 @@ import {
   type Congregation,
   type CongregationMember,
   type TerritoryListItem,
+  type ActiveCongregation,
+  type CongregationJoinRequest,
 } from "@/lib/api";
 import MobileBottomNav from "@/components/MobileBottomNav";
 
@@ -190,9 +192,9 @@ function MemberCard({
           opacity: member.isBlocked ? 0.75 : 1,
         }}
       >
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-[var(--color-text)] truncate">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-[var(--color-text)] truncate leading-snug">
               {member.name || member.email}
             </p>
             {member.name && (
@@ -201,20 +203,21 @@ function MemberCard({
             <p className="text-xs text-[var(--color-text-light)] mt-0.5">
               {ROLE_LABELS[member.role]} · {member._count.revisits} revisitas
               {member.isBlocked && (
-                <span className="ml-2 font-semibold text-[#f87171]">BLOQUEADO</span>
+                <span className="ml-1.5 font-semibold text-[#f87171]">· bloqueado</span>
               )}
             </p>
           </div>
-          <div className="flex gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             {canEdit && (
               <button
                 type="button"
                 onClick={() => setEditing(true)}
                 disabled={loading}
-                className="btn-secondary text-xs py-1 px-2"
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity hover:opacity-80 disabled:opacity-40"
+                style={{ background: "rgba(255,255,255,0.06)" }}
                 aria-label="Editar membro"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-text-light)" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
@@ -226,24 +229,35 @@ function MemberCard({
                   type="button"
                   onClick={toggleBlock}
                   disabled={loading}
-                  className="btn-secondary text-xs py-1 px-2"
-                  style={
-                    member.isBlocked
-                      ? { color: "var(--color-success, #16a34a)" }
-                      : { color: "var(--color-warning, #b45309)" }
-                  }
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity hover:opacity-80 disabled:opacity-40"
+                  style={{
+                    background: member.isBlocked
+                      ? "rgba(34,197,94,0.10)"
+                      : "rgba(251,191,36,0.10)",
+                  }}
+                  aria-label={member.isBlocked ? "Desbloquear membro" : "Bloquear membro"}
                 >
-                  {member.isBlocked ? "Desbloquear" : "Bloquear"}
+                  {member.isBlocked ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={remove}
                   disabled={loading}
-                  className="btn-secondary text-xs py-1 px-2"
-                  style={{ color: "var(--color-danger)" }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity hover:opacity-80 disabled:opacity-40"
+                  style={{ background: "rgba(239,68,68,0.10)" }}
                   aria-label="Remover membro"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                   </svg>
                 </button>
@@ -265,6 +279,106 @@ function MemberCard({
         />
       )}
     </>
+  );
+}
+
+// ── Join Requests Section ─────────────────────────────────────────────────────
+
+function JoinRequestsSection({
+  congregationId,
+  onApproved,
+}: {
+  congregationId: string;
+  onApproved: () => void;
+}) {
+  const [requests, setRequests] = useState<
+    Array<CongregationJoinRequest & { user: { id: string; email: string; name: string | null } }>
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    congregationsApi
+      .listJoinRequests(congregationId)
+      .then(({ data }) => setRequests(data))
+      .catch(() => setRequests([]))
+      .finally(() => setLoading(false));
+  }, [congregationId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const respond = async (requestId: string, action: "approve" | "reject") => {
+    setProcessing(requestId);
+    try {
+      await congregationsApi.respondJoin(congregationId, requestId, action);
+      setRequests((prev) => prev.filter((r) => r.id !== requestId));
+      if (action === "approve") onApproved();
+    } catch {
+      // silencia
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  if (loading) return null;
+  if (requests.length === 0) return null;
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center gap-2 mb-2">
+        <p className="text-xs font-semibold text-[var(--color-text-light)] uppercase tracking-wide">
+          Solicitações de entrada
+        </p>
+        <span
+          className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+          style={{ background: "rgba(251,191,36,0.2)", color: "#fbbf24" }}
+        >
+          {requests.length}
+        </span>
+      </div>
+      <div className="flex flex-col gap-2">
+        {requests.map((req) => (
+          <div
+            key={req.id}
+            className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+            style={{
+              background: "rgba(251,191,36,0.06)",
+              border: "1px solid rgba(251,191,36,0.2)",
+            }}
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[var(--color-text)] truncate">
+                {req.user.name || req.user.email}
+              </p>
+              {req.user.name && (
+                <p className="text-xs text-[var(--color-text-light)] truncate">{req.user.email}</p>
+              )}
+            </div>
+            <div className="flex gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => respond(req.id, "reject")}
+                disabled={processing === req.id}
+                className="btn-secondary text-xs py-1.5 px-3"
+                style={{ color: "var(--color-danger)" }}
+              >
+                Recusar
+              </button>
+              <button
+                type="button"
+                onClick={() => respond(req.id, "approve")}
+                disabled={processing === req.id}
+                className="text-xs py-1.5 px-3 rounded-lg font-semibold text-white"
+                style={{ background: "var(--color-primary)" }}
+              >
+                {processing === req.id ? "..." : "Aprovar"}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -642,13 +756,14 @@ function TerritoriesTab({ congregationId, role }: { congregationId: string; role
             <button
               type="button"
               onClick={() => setShowCreate(true)}
-              className="btn-primary flex items-center gap-2 py-2 px-4 text-sm"
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity hover:opacity-80"
+              style={{ background: "var(--color-primary)" }}
+              aria-label="Novo território"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"
                 className="w-4 h-4" aria-hidden="true">
                 <path d="M12 5v14M5 12h14" />
               </svg>
-              Novo Território
             </button>
           </div>
         )}
@@ -683,13 +798,14 @@ function TerritoriesTab({ congregationId, role }: { congregationId: string; role
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="btn-primary flex items-center gap-2 py-1.5 px-3 text-xs"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity hover:opacity-80"
+            style={{ background: "var(--color-primary)" }}
+            aria-label="Novo território"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-              className="w-3.5 h-3.5" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"
+              className="w-4 h-4" aria-hidden="true">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            Novo
           </button>
         )}
       </div>
@@ -722,6 +838,15 @@ function CongregationContent() {
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [tab, setTab] = useState<"publicadores" | "territorios">("publicadores");
+
+  // Estados para o fluxo de entrada em congregação (Publicador sem congregação)
+  const [activeCongregations, setActiveCongregations] = useState<ActiveCongregation[]>([]);
+  const [pendingRequest, setPendingRequest] = useState<CongregationJoinRequest | null | undefined>(undefined);
+  const [loadingActive, setLoadingActive] = useState(false);
+  const [joinConfirmId, setJoinConfirmId] = useState<string | null>(null);
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState("");
+  const [cancelling, setCancelling] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -756,10 +881,64 @@ function CongregationContent() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Carrega congregações ativas + pedido pendente quando PUBLICADOR/SERVO sem congregação
+  useEffect(() => {
+    if (loading) return; // aguarda carga principal
+    if (congregation !== null) return; // já tem congregação
+    if (role === "ADMIN" || role === "ANCIAO") return; // esses têm fluxo diferente
+    setLoadingActive(true);
+    congregationsApi.listActive()
+      .then(({ data }) => {
+        setActiveCongregations(data.congregations);
+        setPendingRequest(data.pendingRequest);
+      })
+      .catch(() => {
+        setActiveCongregations([]);
+        setPendingRequest(null);
+      })
+      .finally(() => setLoadingActive(false));
+  }, [loading, congregation, role]);
+
   const handleRequestSuccess = () => {
     setShowForm(false);
     setSuccessMsg("Solicitação enviada! O administrador será notificado e realizará a aprovação em breve.");
     load();
+  };
+
+  const handleJoinConfirm = async () => {
+    if (!joinConfirmId) return;
+    setJoining(true);
+    setJoinError("");
+    try {
+      const { data } = await congregationsApi.requestJoin(joinConfirmId);
+      setPendingRequest({
+        ...data,
+        congregationName: activeCongregations.find((c) => c.id === joinConfirmId)?.name ?? "",
+        congregationCity: activeCongregations.find((c) => c.id === joinConfirmId)?.city ?? "",
+        congregationState: activeCongregations.find((c) => c.id === joinConfirmId)?.state ?? "",
+      });
+      setJoinConfirmId(null);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ??
+        "Erro ao enviar solicitação.";
+      setJoinError(msg);
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  const handleCancelJoin = async () => {
+    if (!pendingRequest) return;
+    setCancelling(true);
+    try {
+      await congregationsApi.cancelJoin(pendingRequest.congregationId, pendingRequest.id);
+      setPendingRequest(null);
+    } catch {
+      // silencia erro
+    } finally {
+      setCancelling(false);
+    }
   };
 
   if (loading) {
@@ -832,70 +1011,174 @@ function CongregationContent() {
         )}
 
         {!congregation && role === "PUBLICADOR" && (
-          <div className="flex flex-col gap-4">
-            <div className="card text-center py-6">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
-                style={{ background: "var(--color-primary-soft)" }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.5"
-                  className="w-6 h-6" aria-hidden="true">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
+          <>
+            {/* Carregando */}
+            {loadingActive && (
+              <div className="flex justify-center py-12">
+                <div className="w-7 h-7 rounded-full border-2 animate-spin"
+                  style={{ borderColor: "var(--color-primary)", borderTopColor: "transparent" }} />
               </div>
-              <p className="text-sm text-[var(--color-text-light)] leading-relaxed">
-                Você ainda não foi vinculado a uma congregação.<br />
-                Aguarde o Ancião vincular seu acesso.
-              </p>
-            </div>
+            )}
 
-            <div className="card py-5 px-4"
-              style={{ borderColor: "var(--color-primary)", borderWidth: "1px" }}>
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                  style={{ background: "var(--color-primary-soft)" }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.5"
-                    className="w-5 h-5" aria-hidden="true">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                    <polyline points="22,6 12,13 2,6" />
+            {/* Pedido pendente */}
+            {!loadingActive && pendingRequest && (
+              <div className="card text-center py-8">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ background: "rgba(251,191,36,0.15)" }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.5"
+                    className="w-7 h-7" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
                   </svg>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[var(--color-text)] mb-1">
-                    É Ancião e quer cadastrar sua congregação?
-                  </p>
-                  <p className="text-xs text-[var(--color-text-light)] leading-relaxed mb-3">
-                    Envie um e-mail para o administrador com os dados da sua congregação:
-                  </p>
-                  <ul className="text-xs text-[var(--color-text-light)] mb-3 flex flex-col gap-1 pl-1">
-                    <li className="flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-primary)" }} />
-                      Nome da congregação
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-primary)" }} />
-                      Estado
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-primary)" }} />
-                      Cidade
-                    </li>
-                  </ul>
-                  <a
-                    href="mailto:1FPaschuini@jwpub.org?subject=Cadastro%20de%20Congrega%C3%A7%C3%A3o&body=Nome%3A%20%0AEstado%3A%20%0ACidade%3A%20"
-                    className="btn-primary text-xs py-2 px-4 inline-flex items-center gap-2"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                      className="w-3.5 h-3.5" aria-hidden="true">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                    1FPaschuini@jwpub.org
-                  </a>
+                <h2 className="font-semibold text-[var(--color-text)] mb-1">Aguardando aprovação</h2>
+                <p className="text-sm text-[var(--color-text-light)] mb-1 leading-relaxed">
+                  Sua solicitação para
+                </p>
+                <p className="text-base font-bold text-[var(--color-text)] mb-1">
+                  {pendingRequest.congregationName}
+                </p>
+                <p className="text-xs text-[var(--color-text-light)] mb-6">
+                  {pendingRequest.congregationCity} — {pendingRequest.congregationState}
+                </p>
+                <p className="text-xs text-[var(--color-text-light)] mb-6">
+                  O Ancião irá revisar e aprovar o seu acesso em breve.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCancelJoin}
+                  disabled={cancelling}
+                  className="btn-secondary text-sm py-2 px-5 mx-auto"
+                  style={{ color: "var(--color-danger)" }}
+                >
+                  {cancelling ? "Cancelando..." : "Cancelar solicitação"}
+                </button>
+              </div>
+            )}
+
+            {/* Seletor de congregação */}
+            {!loadingActive && !pendingRequest && (
+              <div className="flex flex-col gap-4">
+                <div className="card py-5">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: "var(--color-primary-soft)" }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.5"
+                        className="w-5 h-5" aria-hidden="true">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="font-semibold text-[var(--color-text)] text-sm">Solicitar entrada em congregação</h2>
+                      <p className="text-xs text-[var(--color-text-light)]">Escolha sua congregação abaixo</p>
+                    </div>
+                  </div>
+
+                  {activeCongregations.length === 0 ? (
+                    <p className="text-sm text-[var(--color-text-light)] text-center py-4">
+                      Nenhuma congregação disponível no momento.
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {activeCongregations.map((cong) => (
+                        <button
+                          key={cong.id}
+                          type="button"
+                          onClick={() => { setJoinError(""); setJoinConfirmId(cong.id); }}
+                          className="flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors active:opacity-70"
+                          style={{
+                            background: "rgba(255,255,255,0.04)",
+                            border: "1px solid var(--color-border)",
+                          }}
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--color-text)]">{cong.name}</p>
+                            <p className="text-xs text-[var(--color-text-light)]">{cong.city} — {cong.state}</p>
+                          </div>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-text-light)" strokeWidth="2"
+                            className="w-4 h-4 shrink-0" aria-hidden="true">
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          </div>
+            )}
+
+            {/* Modal de confirmação de entrada */}
+            {joinConfirmId && (() => {
+              const cong = activeCongregations.find((c) => c.id === joinConfirmId);
+              if (!cong) return null;
+              return (
+                <div
+                  className="fixed inset-0 z-50 flex items-end justify-center"
+                  style={{ background: "rgba(0,0,0,0.65)" }}
+                  onClick={() => { setJoinConfirmId(null); setJoinError(""); }}
+                >
+                  <div
+                    className="w-full max-w-md rounded-t-3xl p-6 flex flex-col gap-4"
+                    style={{ background: "var(--color-surface-elevated)", border: "1px solid var(--color-border)" }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex justify-center">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center"
+                        style={{ background: "var(--color-primary-soft)" }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.5"
+                          className="w-6 h-6" aria-hidden="true">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                          <circle cx="9" cy="7" r="4" />
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-[var(--color-text)] mb-1">
+                        Solicitar entrada em
+                      </p>
+                      <p className="text-base font-bold text-[var(--color-text)]">{cong.name}</p>
+                      <p className="text-xs text-[var(--color-text-light)] mt-1">
+                        {cong.city} — {cong.state}
+                      </p>
+                      <p className="text-xs text-[var(--color-text-light)] mt-3 leading-relaxed">
+                        O Ancião desta congregação será notificado e poderá aprovar ou recusar seu acesso.
+                      </p>
+                    </div>
+                    {joinError && (
+                      <p className="text-xs text-center" style={{ color: "var(--color-danger)" }}>
+                        {joinError}
+                      </p>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setJoinConfirmId(null); setJoinError(""); }}
+                        className="btn-secondary flex-1 py-2.5 text-sm"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleJoinConfirm}
+                        disabled={joining}
+                        className="flex-1 py-2.5 text-sm rounded-xl font-semibold text-white transition-opacity active:opacity-80 flex items-center justify-center gap-2"
+                        style={{ background: "var(--color-primary)" }}
+                      >
+                        {joining ? (
+                          <><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> Enviando...</>
+                        ) : (
+                          "Solicitar entrada"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </>
         )}
 
         {showForm && (
@@ -977,22 +1260,27 @@ function CongregationContent() {
                         </p>
                         <p className="text-sm text-[var(--color-text-light)] mt-1">publicador(es) na congregação</p>
                       </div>
-                    ) : congregation.members && congregation.members.length === 0 ? (
-                      <p className="text-sm text-[var(--color-text-light)] text-center py-6">
-                        Nenhum membro vinculado ainda.
-                      </p>
                     ) : (
-                      <div className="flex flex-col gap-2">
-                        {congregation.members?.map((member) => (
-                          <MemberCard
-                            key={member.id}
-                            member={member}
-                            currentRole={role ?? ""}
-                            congregationId={congregation.id}
-                            onUpdate={load}
-                          />
-                        ))}
-                      </div>
+                      <>
+                        <JoinRequestsSection congregationId={congregation.id} onApproved={load} />
+                        {congregation.members && congregation.members.length === 0 ? (
+                          <p className="text-sm text-[var(--color-text-light)] text-center py-6">
+                            Nenhum membro vinculado ainda.
+                          </p>
+                        ) : (
+                          <div className="flex flex-col gap-2">
+                            {congregation.members?.map((member) => (
+                              <MemberCard
+                                key={member.id}
+                                member={member}
+                                currentRole={role ?? ""}
+                                congregationId={congregation.id}
+                                onUpdate={load}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
