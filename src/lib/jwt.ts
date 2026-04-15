@@ -35,8 +35,11 @@ export async function signAccessToken(
     .sign(JWT_SECRET);
 }
 
-export async function signRefreshToken(userId: string): Promise<string> {
-  return new SignJWT({ sub: userId })
+export async function signRefreshToken(
+  userId: string,
+  refreshTokenVersion: number
+): Promise<string> {
+  return new SignJWT({ sub: userId, ver: refreshTokenVersion })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(REFRESH_TOKEN_EXPIRY)
@@ -56,19 +59,23 @@ export async function verifyAccessToken(
 
 export async function verifyRefreshToken(
   token: string
-): Promise<{ sub: string } | null> {
+): Promise<{ sub: string; ver?: number } | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_REFRESH_SECRET);
-    return payload as { sub: string };
+    return payload as { sub: string; ver?: number };
   } catch {
     return null;
   }
 }
 
-export async function generateTokenPair(userId: string, role: string) {
+export async function generateTokenPair(
+  userId: string,
+  role: string,
+  refreshTokenVersion: number
+) {
   const [accessToken, refreshToken] = await Promise.all([
     signAccessToken(userId, role),
-    signRefreshToken(userId),
+    signRefreshToken(userId, refreshTokenVersion),
   ]);
   return { accessToken, refreshToken };
 }

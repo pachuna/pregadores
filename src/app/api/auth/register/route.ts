@@ -36,16 +36,19 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hash(password, SALT_ROUNDS);
 
-    const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.trim().toLowerCase();
     const user = await prisma.user.create({
       data: {
         email,
         passwordHash,
-        role: ADMIN_EMAIL && email === ADMIN_EMAIL ? "ADMIN" : "PUBLICADOR",
+        role: "PUBLICADOR",
       },
     });
 
-    const tokens = await generateTokenPair(user.id, user.role);
+    const tokens = await generateTokenPair(
+      user.id,
+      user.role,
+      user.refreshTokenVersion
+    );
     return NextResponse.json({ ...tokens, role: user.role, congregationId: user.congregationId ?? null, name: user.name ?? null }, { status: 201 });
   } catch (error) {
     console.error("Register error:", error);

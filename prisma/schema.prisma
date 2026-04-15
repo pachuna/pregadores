@@ -75,6 +75,7 @@ model User {
   passwordHash          String
   firebaseUid           String?            @unique
   role                  Role               @default(PUBLICADOR)
+  refreshTokenVersion   Int                @default(0)
   isBlocked             Boolean            @default(false)
   congregationId        String?
   congregation          Congregation?      @relation("CongregationMembers", fields: [congregationId], references: [id])

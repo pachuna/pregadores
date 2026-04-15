@@ -72,10 +72,16 @@ export async function PATCH(
 
   const updated = await prisma.user.update({
     where: { id },
-    data: updateData,
+    data: {
+      ...updateData,
+      ...(updateData.isBlocked === true
+        ? { refreshTokenVersion: { increment: 1 } }
+        : {}),
+    },
     select: {
       id: true,
       email: true,
+      name: true,
       role: true,
       congregationId: true,
       isBlocked: true,

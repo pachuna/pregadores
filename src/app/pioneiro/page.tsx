@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { useAuthStore } from "@/store/authStore";
-import { pioneerApi, type PioneerReport } from "@/lib/api";
+import { authApi, pioneerApi, type PioneerReport } from "@/lib/api";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -138,8 +138,20 @@ function PioneerContent() {
   const now = new Date();
   const router = useRouter();
   const name = useAuthStore((s) => s.name);
+  const refreshToken = useAuthStore((s) => s.refreshToken);
   const logout = useAuthStore((s) => s.logout);
-  const handleLogout = () => { logout(); router.replace("/login"); };
+  const handleLogout = async () => {
+    try {
+      if (refreshToken) {
+        await authApi.logout(refreshToken);
+      }
+    } catch {
+      // melhor esforço
+    } finally {
+      logout();
+      router.replace("/login");
+    }
+  };
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [selected, setSelected] = useState(todayStr());

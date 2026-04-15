@@ -20,6 +20,12 @@
 | Mapas | Leaflet (carregado via `dynamic` com `ssr: false`) |
 | Servidor | VPS Ubuntu 24.04, PM2, Nginx |
 
+**CSP atual:**
+- Desenvolvimento: `Content-Security-Policy-Report-Only`
+- Produção: `Content-Security-Policy` efetiva
+- `unsafe-eval` fica liberado apenas em desenvolvimento por causa do bundler do Next/Webpack
+- Produção libera somente os domínios client-side necessários para Google Identity, Google Maps JS e Places
+
 **Variáveis de ambiente críticas (VPS `.env.production`):**
 - `JWT_SECRET`, `JWT_REFRESH_SECRET`
 - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
@@ -177,6 +183,13 @@ Falha no refresh → logout() + redirect /login?reason=session-expired
 - Usa `node:https` (não `fetch`) para respeitar `--dns-result-order=ipv4first`
 - Aceita múltiplos `GOOGLE_CLIENT_ID` separados por vírgula
 - Se e-mail já existe → loga; se não → cria conta com senha aleatória
+
+### 3.6 CSP e Recursos Externos
+- A CSP cobre apenas recursos carregados no navegador; chamadas server-side para Google, ViaCEP, Nominatim e OSM feitas em rotas API não dependem dela
+- Origens liberadas no cliente:
+  - `accounts.google.com` e `oauth2.googleapis.com` para Google Identity
+  - `maps.googleapis.com`, `maps.gstatic.com` e `places.googleapis.com` para Google Maps e autocomplete
+- Em produção, `upgrade-insecure-requests` fica ativo; em desenvolvimento ele nao e enviado para evitar warning inutil em modo report-only
 
 ---
 
@@ -466,6 +479,7 @@ Solução (handleBack em territories/[id]/page.tsx):
 
 - Dependências que devem ficar em `dependencies` (não devDependencies): `tailwindcss`, `@tailwindcss/postcss`, `postcss`, `@types/web-push`, `dotenv`
 - `eslint: { ignoreDuringBuilds: true }` no `next.config.ts` — ESLint não instalado com `--omit=dev`
+- CSP em `next.config.ts`: report-only no dev e enforcement em produção
 - Migrations rodadas com `npx prisma migrate deploy` (nunca `migrate dev` em produção)
 - Service Worker: ao mudar `CACHE_NAME`, usuários recebem novo SW no próximo acesso
 
@@ -492,6 +506,7 @@ Solução (handleBack em territories/[id]/page.tsx):
 | Autenticação | `AuthPayload` tem apenas `userId` + `role`. Para `congregationId`, buscar no banco. |
 | Roles | Checar a hierarquia antes de definir permissões novas |
 | Push | Sempre tratar erros de push como não-críticos (não bloquear a resposta da API) |
+| CSP | Em produção, qualquer novo recurso client-side externo precisa entrar explicitamente na policy antes do deploy |
 | Leaflet / Mapas | Carregar com `dynamic(..., { ssr: false })` — nunca importar diretamente |
 | `router.back()` | Em páginas acessíveis por link externo, usar `handleBack` com fallback para `/home` |
 | Toast após `navigator.share()` | Exibir APÓS `await navigator.share()` resolver, não antes |

@@ -18,3 +18,8 @@ node_modules/
 serviceAccount.json
 *serviceAccount*.json
 firestore-backup-local/
+
+# Artefatos locais de exploracao e apoio que nao devem ir para o Git
+tmp_*
+Contexto/HOURGLASS_*
+Contexto/skills/

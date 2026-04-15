@@ -41,7 +41,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const tokens = await generateTokenPair(user.id, user.role);
+    if ((payload.ver ?? -1) !== user.refreshTokenVersion) {
+      return NextResponse.json(
+        { error: "Refresh token inválido ou revogado" },
+        { status: 401 }
+      );
+    }
+
+    const tokens = await generateTokenPair(
+      user.id,
+      user.role,
+      user.refreshTokenVersion
+    );
     return NextResponse.json({ ...tokens, role: user.role, congregationId: user.congregationId ?? null, name: user.name ?? null });
   } catch {
     return NextResponse.json(

@@ -40,7 +40,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const tokens = await generateTokenPair(user.id, user.role);
+    const tokens = await generateTokenPair(
+      user.id,
+      user.role,
+      user.refreshTokenVersion
+    );
     return NextResponse.json({ ...tokens, role: user.role, congregationId: user.congregationId ?? null, name: user.name ?? null });
   } catch (e) {
     console.error("Erro no login:", e);

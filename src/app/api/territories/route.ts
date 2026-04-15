@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authenticateRequest, requireTerritoryManager } from "@/lib/auth-middleware";
 
@@ -37,39 +38,45 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  // Para cada território, contar o total de casas e últimas visitas
-  const result = await Promise.all(
-    territories.map(async (t) => {
-      const totalHouses = t.streets.reduce(
-        (acc, s) => acc + s._count.houses,
-        0
-      );
+  const territoryIds = territories.map((territory) => territory.id);
+  const lastVisits = territoryIds.length
+    ? await prisma.$queryRaw<Array<{ territoryId: string; visitedAt: Date }>>(Prisma.sql`
+        SELECT DISTINCT ON (s."territoryId")
+          s."territoryId" AS "territoryId",
+          hv."visitedAt" AS "visitedAt"
+        FROM "HouseVisit" hv
+        INNER JOIN "House" h ON h."id" = hv."houseId"
+        INNER JOIN "Street" s ON s."id" = h."streetId"
+        WHERE s."territoryId" IN (${Prisma.join(territoryIds)})
+        ORDER BY s."territoryId", hv."visitedAt" DESC
+      `)
+    : [];
 
-      // Última visita registrada em qualquer casa desse território
-      const lastVisit = await prisma.houseVisit.findFirst({
-        where: {
-          house: { street: { territoryId: t.id } },
-        },
-        orderBy: { visitedAt: "desc" },
-        select: { visitedAt: true },
-      });
-
-      return {
-        id: t.id,
-        number: t.number,
-        label: t.label,
-        territoryType: t.territoryType,
-        imageUrl: t.imageUrl,
-        color: t.color,
-        hidden: t.hidden,
-        lastUpdate: t.lastUpdate,
-        totalStreets: t._count.streets,
-        totalHouses,
-        lastVisitAt: lastVisit?.visitedAt ?? null,
-        lastSharedAt: t.lastSharedAt ?? null,
-      };
-    })
+  const lastVisitByTerritory = new Map(
+    lastVisits.map((visit) => [visit.territoryId, visit.visitedAt])
   );
+
+  const result = territories.map((t) => {
+    const totalHouses = t.streets.reduce(
+      (acc, s) => acc + s._count.houses,
+      0
+    );
+
+    return {
+      id: t.id,
+      number: t.number,
+      label: t.label,
+      territoryType: t.territoryType,
+      imageUrl: t.imageUrl,
+      color: t.color,
+      hidden: t.hidden,
+      lastUpdate: t.lastUpdate,
+      totalStreets: t._count.streets,
+      totalHouses,
+      lastVisitAt: lastVisitByTerritory.get(t.id) ?? null,
+      lastSharedAt: t.lastSharedAt ?? null,
+    };
+  });
 
   return NextResponse.json(result);
 }

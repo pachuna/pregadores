@@ -99,6 +99,8 @@ export const authApi = {
     api.post<AuthTokens>("/api/auth/google", { idToken }),
   refresh: (refreshToken: string) =>
     api.post<AuthTokens>("/api/auth/refresh", { refreshToken }),
+  logout: (refreshToken: string) =>
+    api.post<{ ok: boolean }>("/api/auth/logout", { refreshToken }),
   updateProfile: (name: string) =>
     api.patch<{ ok: boolean; name: string }>("/api/auth/profile", { name }),
 };
@@ -162,8 +164,18 @@ export interface AdminUser {
   _count: { revisits: number };
 }
 
+export interface AdminUsersResponse {
+  items: AdminUser[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  counts: Record<"ADMIN" | "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO", number>;
+}
+
 export const adminApi = {
-  listUsers: () => api.get<AdminUser[]>("/api/admin/users"),
+  listUsers: (params?: { page?: number; pageSize?: number; search?: string }) =>
+    api.get<AdminUsersResponse>("/api/admin/users", { params }),
   updateUser: (
     id: string,
     data: {

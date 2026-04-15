@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { revisitsApi, statsApi, presenceApi, type StatsData } from "@/lib/api";
+import { authApi, revisitsApi, statsApi, presenceApi, type StatsData } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import AuthGuard from "@/components/AuthGuard";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -166,6 +166,7 @@ function HomeContent() {
   const [selectedRevisit, setSelectedRevisit] = useState<Revisit | null>(null);
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [stats, setStats] = useState<StatsData | null>(null);
+  const refreshToken = useAuthStore((s) => s.refreshToken);
   const logout = useAuthStore((s) => s.logout);
   const role = useAuthStore((s) => s.role);
   const congregationId = useAuthStore((s) => s.congregationId);
@@ -225,9 +226,17 @@ function HomeContent() {
   const congregationLabel = role === "ADMIN" ? "Admin" : "Congregação";
   const adminHasCongregation = role === "ADMIN" && !!congregationId;
 
-  const handleLogout = () => {
-    logout();
-    router.replace("/login");
+  const handleLogout = async () => {
+    try {
+      if (refreshToken) {
+        await authApi.logout(refreshToken);
+      }
+    } catch {
+      // melhor esforço
+    } finally {
+      logout();
+      router.replace("/login");
+    }
   };
 
   return (

@@ -8,6 +8,7 @@ import AuthGuard from "@/components/AuthGuard";
 import CongregationRequestForm from "@/components/CongregationRequestForm";
 import CreateTerritoryModal from "@/components/CreateTerritoryModal";
 import {
+  authApi,
   congregationsApi,
   territoriesApi,
   type Congregation,
@@ -831,8 +832,20 @@ function CongregationContent() {
   const role = useAuthStore((s) => s.role);
   const congregationId = useAuthStore((s) => s.congregationId);
   const name = useAuthStore((s) => s.name);
+  const refreshToken = useAuthStore((s) => s.refreshToken);
   const logout = useAuthStore((s) => s.logout);
-  const handleLogout = () => { logout(); router.replace("/login"); };
+  const handleLogout = async () => {
+    try {
+      if (refreshToken) {
+        await authApi.logout(refreshToken);
+      }
+    } catch {
+      // melhor esforço
+    } finally {
+      logout();
+      router.replace("/login");
+    }
+  };
   const [congregation, setCongregation] = useState<Congregation | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

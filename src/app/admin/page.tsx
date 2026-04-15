@@ -1,9 +1,9 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { adminApi, congregationsApi, pushApi, type AdminUser, type Congregation, type PushTarget } from "@/lib/api";
+import { adminApi, authApi, congregationsApi, pushApi, type AdminUser, type Congregation, type PushTarget } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import AuthGuard from "@/components/AuthGuard";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -327,10 +327,28 @@ function SendPushModal({ onClose }: { onClose: () => void }) {
 function AdminContent() {
   const role = useAuthStore((s) => s.role);
   const name = useAuthStore((s) => s.name);
+  const refreshToken = useAuthStore((s) => s.refreshToken);
   const logout = useAuthStore((s) => s.logout);
   const router = useRouter();
-  const handleLogout = () => { logout(); router.replace("/login"); };
+  const handleLogout = async () => {
+    try {
+      if (refreshToken) {
+        await authApi.logout(refreshToken);
+      }
+    } catch {
+      // melhor esforço
+    } finally {
+      logout();
+      router.replace("/login");
+    }
+  };
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [userCounts, setUserCounts] = useState<Record<RoleOption, number>>({
+    ADMIN: 0,
+    ANCIAO: 0,
+    PUBLICADOR: 0,
+    SERVO_DE_CAMPO: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
@@ -339,6 +357,10 @@ function AdminContent() {
   const [showPushModal, setShowPushModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showUsers, setShowUsers] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const deferredSearchQuery = useDeferredValue(searchQuery.trim());
 
   useEffect(() => {
     if (role && role !== "ADMIN") router.replace("/home");
@@ -348,20 +370,31 @@ function AdminContent() {
     setLoading(true);
     setError("");
     try {
-      const { data } = await adminApi.listUsers();
-      setUsers(data);
+      const { data } = await adminApi.listUsers({
+        page,
+        pageSize: 20,
+        search: deferredSearchQuery || undefined,
+      });
+      setUsers(data.items);
+      setTotalUsers(data.total);
+      setTotalPages(data.totalPages);
+      setUserCounts(data.counts);
     } catch {
       setError("Não foi possível carregar os usuários.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [deferredSearchQuery, page]);
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [deferredSearchQuery]);
+
   const handleSaveEdit = async (id: string, data: { role?: RoleOption }) => {
     await adminApi.updateUser(id, data);
-    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...data } : u)));
+    await loadUsers();
   };
 
   const handleConfirm = async () => {
@@ -370,12 +403,11 @@ function AdminContent() {
     try {
       if (confirmAction.type === "delete") {
         await adminApi.deleteUser(confirmAction.user.id);
-        setUsers((prev) => prev.filter((u) => u.id !== confirmAction.user.id));
       } else {
         const isBlocked = confirmAction.type === "block";
         await adminApi.updateUser(confirmAction.user.id, { isBlocked });
-        setUsers((prev) => prev.map((u) => u.id === confirmAction.user.id ? { ...u, isBlocked } : u));
       }
+      await loadUsers();
       setConfirmAction(null);
     } catch {
       setError("Erro ao executar ação. Tente novamente.");
@@ -418,7 +450,7 @@ function AdminContent() {
               </svg>
             </div>
             <span className="text-xl font-bold leading-none" style={{ color: "#4ade80" }}>
-              {users.filter((u) => u.role === "PUBLICADOR").length}
+              {userCounts.PUBLICADOR}
             </span>
             <span className="text-[10px] text-center leading-tight text-[var(--color-text-light)]">Publicador</span>
           </div>
@@ -433,7 +465,7 @@ function AdminContent() {
               </svg>
             </div>
             <span className="text-xl font-bold leading-none" style={{ color: "#c084fc" }}>
-              {users.filter((u) => u.role === "SERVO_DE_CAMPO").length}
+              {userCounts.SERVO_DE_CAMPO}
             </span>
             <span className="text-[10px] text-center leading-tight text-[var(--color-text-light)]">S. Campo</span>
           </div>
@@ -448,7 +480,7 @@ function AdminContent() {
               </svg>
             </div>
             <span className="text-xl font-bold leading-none" style={{ color: "#60a5fa" }}>
-              {users.filter((u) => u.role === "ANCIAO").length}
+              {userCounts.ANCIAO}
             </span>
             <span className="text-[10px] text-center leading-tight text-[var(--color-text-light)]">Ancião</span>
           </div>
@@ -465,7 +497,7 @@ function AdminContent() {
               </svg>
             </div>
             <span className="text-xl font-bold leading-none" style={{ color: "#f87171" }}>
-              {users.filter((u) => u.role === "ADMIN").length}
+              {userCounts.ADMIN}
             </span>
             <span className="text-[10px] text-center leading-tight text-[var(--color-text-light)]">Admin</span>
           </div>
@@ -540,7 +572,7 @@ function AdminContent() {
               <div>
                 <p className="font-semibold text-sm text-[var(--color-text)]">Usuários</p>
                 <p className="text-xs text-[var(--color-text-light)] mt-0.5">
-                  {users.length > 0 ? `${users.length} usuários cadastrados` : "Gerenciar contas e perfis"}
+                  {totalUsers > 0 ? `${totalUsers} usuários cadastrados` : "Gerenciar contas e perfis"}
                 </p>
               </div>
             </div>
@@ -595,14 +627,7 @@ function AdminContent() {
                 <p className="text-[var(--color-text-light)]">Nenhum usuário encontrado.</p>
               </div>
             ) : (() => {
-                const q = searchQuery.trim().toLowerCase();
-                const filtered = q
-                  ? users.filter((u) =>
-                      u.email.toLowerCase().includes(q) ||
-                      (u.name ?? "").toLowerCase().includes(q)
-                    )
-                  : users;
-                const sorted = [...filtered].sort((a, b) => {
+                const sorted = [...users].sort((a, b) => {
                   const nameA = (a.name ?? a.email).toLowerCase();
                   const nameB = (b.name ?? b.email).toLowerCase();
                   return nameA.localeCompare(nameB, "pt-BR");
@@ -669,6 +694,27 @@ function AdminContent() {
                         </div>
                       </div>
                     ))}
+                    <div className="flex items-center justify-between gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setPage((current) => Math.max(current - 1, 1))}
+                        disabled={page <= 1 || loading}
+                        className="btn-secondary flex-1 text-xs py-2"
+                      >
+                        Anterior
+                      </button>
+                      <p className="text-xs text-[var(--color-text-light)] whitespace-nowrap">
+                        Página {page} de {totalPages}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setPage((current) => Math.min(current + 1, totalPages))}
+                        disabled={page >= totalPages || loading}
+                        className="btn-secondary flex-1 text-xs py-2"
+                      >
+                        Próxima
+                      </button>
+                    </div>
                   </div>
                 );
               })()

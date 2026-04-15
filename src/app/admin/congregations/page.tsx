@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  authApi,
   congregationsApi,
   adminApi,
   type Congregation,
@@ -263,10 +264,10 @@ function LinkElderModal({ congregation, mode, onClose, onLinked }: LinkElderModa
 
   useEffect(() => {
     adminApi
-      .listUsers()
+      .listUsers({ page: 1, pageSize: 100 })
       .then(({ data }) =>
         setUsers(
-          data.filter(
+          data.items.filter(
             (u) => u.role === mode && !u.congregationId && !u.isBlocked
           )
         )
@@ -782,8 +783,20 @@ function DeleteCongregationModal({ congregation, onClose, onDeleted }: DeleteCon
 function AdminCongregationsContent() {
   const role = useAuthStore((s) => s.role);
   const router = useRouter();
+  const refreshToken = useAuthStore((s) => s.refreshToken);
   const logout = useAuthStore((s) => s.logout);
-  const handleLogout = () => { logout(); router.replace("/login"); };
+  const handleLogout = async () => {
+    try {
+      if (refreshToken) {
+        await authApi.logout(refreshToken);
+      }
+    } catch {
+      // melhor esforço
+    } finally {
+      logout();
+      router.replace("/login");
+    }
+  };
   const [congregations, setCongregations] = useState<Congregation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

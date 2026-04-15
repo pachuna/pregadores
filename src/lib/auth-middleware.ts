@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAccessToken } from "./jwt";
+import { prisma } from "./prisma";
 
 export interface AuthPayload {
   userId: string;
@@ -31,7 +32,26 @@ export async function authenticateRequest(
     );
   }
 
-  return { userId: payload.sub, role: payload.role ?? "PUBLICADOR" };
+  const user = await prisma.user.findUnique({
+    where: { id: payload.sub },
+    select: { id: true, role: true, isBlocked: true },
+  });
+
+  if (!user) {
+    return NextResponse.json(
+      { error: "Usuário não encontrado" },
+      { status: 401 }
+    );
+  }
+
+  if (user.isBlocked) {
+    return NextResponse.json(
+      { error: "Conta bloqueada. Entre em contato com o administrador." },
+      { status: 403 }
+    );
+  }
+
+  return { userId: user.id, role: user.role };
 }
 
 /**
