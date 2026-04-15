@@ -338,7 +338,6 @@ function TerritoryDetailContent() {
     setSharing(true);
     try {
       const result = await territoriesApi.share(territory.id, shareTarget);
-      showToast("Notificação enviada para todos os membros!", true);
 
       // Abre o seletor nativo de compartilhamento (WhatsApp, Telegram, etc.)
       const name = territory.label ?? `Território ${territory.number}`;
@@ -359,6 +358,9 @@ function TerritoryDetailContent() {
           "_blank"
         );
       }
+
+      // Toast aparece DEPOIS do diálogo nativo fechar, para o usuário não perder a mensagem
+      showToast("Notificação enviada para todos os membros!", true);
     } catch {
       showToast("Erro ao enviar notificação.", false);
     } finally {
