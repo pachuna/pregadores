@@ -297,7 +297,7 @@ export const territoriesApi = {
     ),
   delete: (id: string) =>
     api.delete<{ ok: boolean }>(`/api/territories/${id}`),
-  share: (id: string, target: "congregation" | "ALL" = "congregation") =>
+  share: (id: string, target: "congregation" | "ALL" | "ADMIN" = "congregation") =>
     api.post<{ ok: boolean; lastSharedAt: string; lastWorkedAt: string | null }>(
       `/api/territories/${id}/share`,
       { target }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireTerritoryManager } from "@/lib/auth-middleware";
-import { notifyByCongregation, notifyAll } from "@/lib/push";
+import { notifyByCongregation, notifyAll, notifyByRole } from "@/lib/push";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   // Público-alvo: apenas ADMIN pode escolher "ALL"
   let body: { target?: string } = {};
   try { body = await request.json(); } catch { /* body vazio é ok */ }
-  const target = auth.role === "ADMIN" && body.target === "ALL" ? "ALL" : "congregation";
+  const target = auth.role === "ADMIN" && ["ALL", "ADMIN"].includes(body.target ?? "") ? body.target! : "congregation";
 
   // Busca o território com a congregação
   const territory = await prisma.territory.findUnique({
@@ -89,6 +89,8 @@ export async function POST(request: NextRequest, { params }: Params) {
   };
   if (target === "ALL") {
     await notifyAll(pushPayload);
+  } else if (target === "ADMIN") {
+    await notifyByRole("ADMIN", pushPayload);
   } else {
     await notifyByCongregation(territory.congregationId, pushPayload);
   }

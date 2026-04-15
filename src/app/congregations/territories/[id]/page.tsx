@@ -296,7 +296,7 @@ function TerritoryDetailContent() {
   const [editOpen, setEditOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
-  const [shareTarget, setShareTarget] = useState<"congregation" | "ALL">("congregation");
+  const [shareTarget, setShareTarget] = useState<"congregation" | "ALL" | "ADMIN">("congregation");
   const [selectedHouse, setSelectedHouse] = useState<TerritoryHouse | null>(null);
   const [visitLoading, setVisitLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
@@ -605,6 +605,7 @@ function TerritoryDetailContent() {
                 {([
                   { value: "congregation", label: "Congregação vinculada", desc: "Apenas membros desta congregação" },
                   { value: "ALL",          label: "Todos os membros",      desc: "Todo o sistema" },
+                  { value: "ADMIN",        label: "Apenas ADMIN",          desc: "Somente administradores" },
                 ] as const).map((opt) => (
                   <button
                     key={opt.value}
