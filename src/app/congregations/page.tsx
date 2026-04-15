@@ -64,7 +64,10 @@ function EditMemberModal({
       await congregationsApi.updateMember(congregationId, {
         userId: member.id,
         name: name.trim() || undefined,
-        role: role !== member.role ? role : undefined,
+        role:
+          role !== member.role && role !== "ADMIN"
+            ? (role as "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO")
+            : undefined,
       });
       onSaved();
     } catch {
