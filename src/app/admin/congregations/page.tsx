@@ -112,9 +112,9 @@ function MembersSection({
             opacity: m.isBlocked ? 0.75 : 1,
           }}
         >
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-[var(--color-text)] truncate">{m.email}</p>
-            <p className="text-[10px] text-[var(--color-text-light)] mt-0.5">
+            <p className="text-[10px] text-[var(--color-text-light)] mt-0.5 truncate">
               {ROLE_LABELS[m.role]} · {m._count.revisits} revisita(s)
               {m.isBlocked && <span className="ml-1 font-semibold text-red-600">BLOQUEADO</span>}
             </p>
@@ -940,20 +940,20 @@ function AdminCongregationsContent() {
                             <p className="font-medium text-[var(--color-text)] text-sm truncate">
                               {c.name}
                             </p>
-                            <p className="text-xs text-[var(--color-text-light)] mt-0.5">
+                            <p className="text-xs text-[var(--color-text-light)] mt-0.5 truncate">
                               {c.city} — {c.state}
                             </p>
-                            <p className="text-xs text-[var(--color-text-light)]">{c.jwEmail}</p>
+                            <p className="text-xs text-[var(--color-text-light)] truncate">{c.jwEmail}</p>
                           </div>
                           <span
-                            className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full border ${STATUS_COLORS[c.status]}`}
+                            className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${STATUS_COLORS[c.status]}`}
                           >
                             {STATUS_LABELS[c.status]}
                           </span>
                         </div>
 
                         {/* Meta */}
-                        <p className="text-xs text-[var(--color-text-light)] mb-1">
+                        <p className="text-xs text-[var(--color-text-light)] mb-1 truncate">
                           {c._count?.members ?? 0} membro(s) · Solicitado por{" "}
                           {c.createdBy?.email ?? "—"}
                         </p>
@@ -965,7 +965,7 @@ function AdminCongregationsContent() {
                         {c.status !== "REJECTED" && <div className="mb-3" />}
 
                         {/* Actions */}
-                        <div className="flex gap-2 flex-wrap">
+                        <div className="flex gap-2 flex-wrap items-center">
                           {c.status === "PENDING" && (
                             <>
                               <button

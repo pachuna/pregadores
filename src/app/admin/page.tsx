@@ -454,11 +454,11 @@ function AdminContent() {
         {/* Stats bar */}
         <div className="grid grid-cols-4 gap-2 mb-6">
           {(["PUBLICADOR", "SERVO_DE_CAMPO", "ANCIAO", "ADMIN"] as RoleOption[]).map((r) => (
-            <div key={r} className="card text-center py-3 px-2" style={{ borderColor: "var(--color-border)" }}>
-              <span className="text-2xl font-bold text-[var(--color-primary)]">
+            <div key={r} className="card flex flex-col items-center justify-center text-center py-3 px-1.5" style={{ borderColor: "var(--color-border)" }}>
+              <span className="text-2xl font-bold text-[var(--color-primary)] leading-none">
                 {users.filter((u) => u.role === r).length}
               </span>
-              <p className="text-xs text-[var(--color-text-light)] mt-0.5">{ROLE_LABELS[r]}</p>
+              <p className="text-[10px] leading-tight text-[var(--color-text-light)] mt-1 w-full overflow-hidden text-ellipsis" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", whiteSpace: "normal" }}>{ROLE_LABELS[r]}</p>
             </div>
           ))}
         </div>
@@ -537,19 +537,19 @@ function AdminContent() {
                       </p>
                     )}
                   </div>
-                  <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full border ${ROLE_COLORS[user.role]}`}>
+                  <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${ROLE_COLORS[user.role]}`}>
                     {ROLE_LABELS[user.role]}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 text-xs text-[var(--color-text-light)] mb-3">
-                  <span>{user._count.revisits} revisitas</span>
+                <div className="flex items-center gap-3 text-xs text-[var(--color-text-light)] mb-3 overflow-hidden">
+                  <span className="whitespace-nowrap">{user._count.revisits} revisitas</span>
                   <span>·</span>
-                  <span>Desde {new Date(user.createdAt).toLocaleDateString("pt-BR")}</span>
-                  {user.isBlocked && <><span>·</span><span className="font-semibold text-red-600">BLOQUEADO</span></>}
+                  <span className="whitespace-nowrap">Desde {new Date(user.createdAt).toLocaleDateString("pt-BR")}</span>
+                  {user.isBlocked && <><span>·</span><span className="font-semibold text-red-600 whitespace-nowrap">BLOQUEADO</span></>}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <button type="button" onClick={() => setEditingUser(user)} className="btn-secondary text-xs py-1.5 px-3 flex-1">
                     Editar
                   </button>
@@ -564,8 +564,8 @@ function AdminContent() {
                   <button
                     type="button"
                     onClick={() => setConfirmAction({ type: "delete", user })}
-                    className="btn-secondary text-xs py-1.5 px-3"
-                    style={{ color: "var(--color-danger)" }}
+                    className="btn-secondary text-xs py-1.5 px-3 shrink-0"
+                    style={{ color: "var(--color-danger)", width: "auto" }}
                     aria-label={`Excluir ${user.email}`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
