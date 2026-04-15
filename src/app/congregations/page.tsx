@@ -31,10 +31,10 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   REJECTED: { label: "Recusada", color: "text-[#94a3b8] bg-[rgba(255,255,255,0.06)] border-[rgba(255,255,255,0.12)]" },
 };
 
-// Roles que ANCIAO pode atribuir (não pode promover a ANCIAO)
-const EDITABLE_ROLES_ANCIAO: CongregationMember["role"][] = ["PUBLICADOR", "SERVO_DE_CAMPO"];
-// ADMIN pode atribuir qualquer role
-const EDITABLE_ROLES_ADMIN: CongregationMember["role"][] = ["PUBLICADOR", "SERVO_DE_CAMPO", "ANCIAO"];
+// Roles que ANCIAO pode atribuir (tudo exceto ADMIN)
+const EDITABLE_ROLES_ANCIAO: CongregationMember["role"][] = ["ANCIAO", "PUBLICADOR", "SERVO_DE_CAMPO"];
+// ADMIN pode atribuir qualquer role (exceto ADMIN, que é gerenciado fora deste fluxo)
+const EDITABLE_ROLES_ADMIN: CongregationMember["role"][] = ["ANCIAO", "PUBLICADOR", "SERVO_DE_CAMPO"];
 
 function EditMemberModal({
   member,
@@ -147,11 +147,12 @@ function MemberCard({
   congregationId: string;
   onUpdate: () => void;
 }) {
-  // ADMIN pode gerenciar qualquer membro; ANCIAO pode gerenciar Publicadores e Servos; SERVO_DE_CAMPO não gerencia membros
+  // ADMIN e ANCIAO podem gerenciar qualquer membro exceto ADMINs
   const canShowActions =
-    currentRole === "ADMIN" ||
-    (currentRole === "ANCIAO" && member.role !== "ANCIAO");
-  const canEdit = currentRole === "ADMIN" || currentRole === "ANCIAO";
+    (currentRole === "ADMIN" || currentRole === "ANCIAO") && member.role !== "ADMIN";
+  // Edição de nome/função: idem, nunca sobre membros ADMIN
+  const canEdit =
+    (currentRole === "ADMIN" || currentRole === "ANCIAO") && member.role !== "ADMIN";
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
 

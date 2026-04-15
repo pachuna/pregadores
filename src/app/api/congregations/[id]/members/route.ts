@@ -63,10 +63,30 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "userId é obrigatório" }, { status: 400 });
   }
 
-  // Somente ADMIN pode promover para ANCIAO
-  if (newRole === "ANCIAO" && !isAdmin) {
+  // Somente ADMIN pode alterar membros com role ADMIN
+  if (!isAdmin) {
+    const targetUser = await prisma.user.findFirst({
+      where: { id: userId, congregationId },
+      select: { role: true },
+    });
+    if (!targetUser) {
+      return NextResponse.json(
+        { error: "Usuário não é membro desta congregação" },
+        { status: 404 }
+      );
+    }
+    if (targetUser.role === "ADMIN") {
+      return NextResponse.json(
+        { error: "Não é possível alterar um administrador." },
+        { status: 403 }
+      );
+    }
+  }
+
+  // Ninguém pode atribuir role ADMIN via este endpoint
+  if (newRole === "ADMIN") {
     return NextResponse.json(
-      { error: "Somente o Admin pode promover um Ancião." },
+      { error: "Não é possível atribuir a função de ADMIN por aqui." },
       { status: 403 }
     );
   }
@@ -241,10 +261,10 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     );
   }
 
-  // Ancião não pode remover outros Anciãos
-  if (!isAdmin && target.role === "ANCIAO") {
+  // Ninguém pode remover um ADMIN via este endpoint
+  if (target.role === "ADMIN" && !isAdmin) {
     return NextResponse.json(
-      { error: "Somente o Admin pode remover um Ancião." },
+      { error: "Não é possível remover um administrador." },
       { status: 403 }
     );
   }
