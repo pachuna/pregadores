@@ -302,6 +302,14 @@ function TerritoryDetailContent() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const handleBack = useCallback(() => {
+    if (window.history.length > 2) {
+      router.back();
+    } else {
+      router.push("/home");
+    }
+  }, [router]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -413,7 +421,7 @@ function TerritoryDetailContent() {
     return (
       <div className="mobile-page flex flex-col items-center justify-center min-h-screen gap-4 px-6">
         <p className="text-[var(--color-text-light)]">Território não encontrado.</p>
-        <button type="button" onClick={() => router.back()} className="btn-primary">
+        <button type="button" onClick={handleBack} className="btn-primary">
           Voltar
         </button>
       </div>
@@ -427,7 +435,7 @@ function TerritoryDetailContent() {
         style={{ background: "var(--color-surface)", borderBottom: "1px solid var(--color-border)" }}>
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={handleBack}
           className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
           style={{ background: "var(--color-surface-card)", border: "1px solid var(--color-border)" }}
           aria-label="Voltar">
