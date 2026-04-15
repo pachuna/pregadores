@@ -66,6 +66,7 @@ export async function GET(request: NextRequest) {
         totalStreets: t._count.streets,
         totalHouses,
         lastVisitAt: lastVisit?.visitedAt ?? null,
+        lastSharedAt: t.lastSharedAt ?? null,
       };
     })
   );

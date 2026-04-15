@@ -66,6 +66,7 @@ export async function GET(
     color: territory.color,
     hidden: territory.hidden,
     lastUpdate: territory.lastUpdate,
+    lastSharedAt: territory.lastSharedAt ?? null,
     streets: territory.streets.map((street) => ({
       id: street.id,
       name: street.name,

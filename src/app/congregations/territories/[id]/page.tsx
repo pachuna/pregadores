@@ -294,6 +294,8 @@ function TerritoryDetailContent() {
   const [territory, setTerritory] = useState<TerritoryDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [selectedHouse, setSelectedHouse] = useState<TerritoryHouse | null>(null);
   const [visitLoading, setVisitLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
@@ -319,6 +321,40 @@ function TerritoryDetailContent() {
     if (toastRef.current) clearTimeout(toastRef.current);
     setToast({ msg, ok });
     toastRef.current = setTimeout(() => setToast(null), 3000);
+  }
+
+  async function handleShare() {
+    if (!territory) return;
+    setShareOpen(false);
+    setSharing(true);
+    try {
+      const result = await territoriesApi.share(territory.id);
+      showToast("Notificação enviada para todos os membros!", true);
+
+      // Abre o seletor nativo de compartilhamento (WhatsApp, Telegram, etc.)
+      const name = territory.label ?? `Território ${territory.number}`;
+      const url = `${window.location.origin}/congregations/territories/${territory.id}`;
+      const lastWorkedDate = result.data?.lastWorkedAt
+        ? formatDate(result.data.lastWorkedAt)
+        : null;
+      const lastWorked = lastWorkedDate
+        ? `Último trabalho: ${lastWorkedDate}`
+        : "Nunca trabalhado";
+      const text = `📍 ${name} disponível para trabalho\n${lastWorked}`;
+
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: name, text, url }).catch(() => {});
+      } else {
+        window.open(
+          `https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`,
+          "_blank"
+        );
+      }
+    } catch {
+      showToast("Erro ao enviar notificação.", false);
+    } finally {
+      setSharing(false);
+    }
   }
 
   async function handleConfirmVisit(status: "OK" | "FAIL") {
@@ -425,6 +461,25 @@ function TerritoryDetailContent() {
             </svg>
           </button>
         )}
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            disabled={sharing}
+            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-opacity active:opacity-70"
+            style={{ background: "rgba(37,99,255,0.12)", border: "1px solid rgba(37,99,255,0.25)" }}
+            aria-label="Compartilhar território"
+          >
+            {sharing ? (
+              <div className="w-4 h-4 rounded-full border-2 border-[#2563ff] border-t-transparent animate-spin" />
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="#2563ff" strokeWidth="2"
+                className="w-4 h-4" aria-hidden="true">
+                <path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+              </svg>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Imagem do território */}
@@ -505,6 +560,61 @@ function TerritoryDetailContent() {
           onClose={() => setEditOpen(false)}
           onUpdated={load}
         />
+      )}
+
+      {/* Modal compartilhar */}
+      {shareOpen && territory && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-5"
+          style={{ background: "rgba(0,0,0,0.7)" }}
+          onClick={() => setShareOpen(false)}
+        >
+          <div
+            className="w-full max-w-xs rounded-2xl p-5 flex flex-col gap-4"
+            style={{ background: "var(--color-surface-elevated)", border: "1px solid var(--color-border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-center">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(37,99,255,0.12)" }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#2563ff" strokeWidth="1.8"
+                  className="w-6 h-6" aria-hidden="true">
+                  <path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+                </svg>
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-[var(--color-text)] mb-1">
+                Compartilhar &ldquo;{territory.label ?? `Território ${territory.number}`}&rdquo;?
+              </p>
+              <p className="text-xs text-[var(--color-text-light)]">
+                Uma notificação será enviada para todos os membros da congregação com o link para abrir este território.
+              </p>
+              {territory.lastSharedAt && (
+                <p className="text-xs text-[var(--color-text-light)] mt-1.5">
+                  Último compartilhamento: {formatDateTime(territory.lastSharedAt)}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShareOpen(false)}
+                className="btn-secondary flex-1 py-2 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="flex-1 py-2 text-sm rounded-xl font-semibold text-white transition-opacity active:opacity-80"
+                style={{ background: "#2563ff" }}
+              >
+                Compartilhar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal de visita */}

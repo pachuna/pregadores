@@ -232,6 +232,7 @@ export interface TerritoryListItem {
   totalStreets: number;
   totalHouses: number;
   lastVisitAt: string | null;
+  lastSharedAt: string | null;
 }
 
 export interface HouseVisitSummary {
@@ -263,6 +264,7 @@ export interface TerritoryDetail {
   color: string;
   hidden: boolean;
   lastUpdate: string | null;
+  lastSharedAt: string | null;
   streets: TerritoryStreet[];
 }
 
@@ -295,6 +297,10 @@ export const territoriesApi = {
     ),
   delete: (id: string) =>
     api.delete<{ ok: boolean }>(`/api/territories/${id}`),
+  share: (id: string) =>
+    api.post<{ ok: boolean; lastSharedAt: string; lastWorkedAt: string | null }>(
+      `/api/territories/${id}/share`
+    ),
 };
 
 export const pioneerApi = {

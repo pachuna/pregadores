@@ -133,6 +133,7 @@ model Territory {
   color          String        @default("#cccccc")
   hidden         Boolean       @default(false)
   lastUpdate     DateTime?
+  lastSharedAt   DateTime?
   congregationId String?
   congregation   Congregation? @relation(fields: [congregationId], references: [id])
   streets        Street[]
