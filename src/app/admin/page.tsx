@@ -18,10 +18,10 @@ const ROLE_LABELS: Record<RoleOption, string> = {
 };
 
 const ROLE_COLORS: Record<RoleOption, string> = {
-  ADMIN: "bg-red-100 text-red-700 border-red-200",
-  ANCIAO: "bg-blue-100 text-blue-700 border-blue-200",
-  PUBLICADOR: "bg-green-100 text-green-700 border-green-200",
-  SERVO_DE_CAMPO: "bg-purple-100 text-purple-700 border-purple-200",
+  ADMIN: "bg-[rgba(239,68,68,0.15)] text-[#f87171] border-[rgba(239,68,68,0.3)]",
+  ANCIAO: "bg-[rgba(37,99,255,0.15)] text-[#60a5fa] border-[rgba(37,99,255,0.3)]",
+  PUBLICADOR: "bg-[rgba(34,197,94,0.15)] text-[#4ade80] border-[rgba(34,197,94,0.3)]",
+  SERVO_DE_CAMPO: "bg-[rgba(168,85,247,0.15)] text-[#c084fc] border-[rgba(168,85,247,0.3)]",
 };
 
 interface EditModalProps {
@@ -220,8 +220,8 @@ function SendPushModal({ onClose }: { onClose: () => void }) {
 
         {sent ? (
           <div className="text-center py-6">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: "#dcfce7" }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" className="w-7 h-7" aria-hidden="true">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: "rgba(34,197,94,0.15)" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" className="w-7 h-7" aria-hidden="true">
                 <path d="M20 6L9 17l-5-5" />
               </svg>
             </div>
@@ -410,10 +410,10 @@ function AdminContent() {
           <Link
             href="/admin/congregations"
             className="flex items-center justify-between p-4 rounded-2xl border"
-            style={{ borderColor: "var(--color-border)", background: "var(--color-surface-alt, #f8fafc)" }}
+            style={{ borderColor: "var(--color-border)", background: "var(--color-surface-card)" }}
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "var(--color-primary-light, #e8eef7)" }}>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "var(--color-primary-soft)" }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <polyline points="9 22 9 12 15 12 15 22" />
@@ -433,11 +433,11 @@ function AdminContent() {
             type="button"
             onClick={() => setShowPushModal(true)}
             className="flex items-center justify-between p-4 rounded-2xl border w-full text-left"
-            style={{ borderColor: "var(--color-border)", background: "var(--color-surface-alt, #f8fafc)" }}
+            style={{ borderColor: "var(--color-border)", background: "var(--color-surface-card)" }}
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "#fef3c7" }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(217,119,6,0.15)" }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
@@ -466,7 +466,7 @@ function AdminContent() {
         </div>
 
         {error && (
-          <div className="rounded-xl p-3 mb-4 text-sm text-center" style={{ background: "#fef2f2", color: "var(--color-danger)", border: "1px solid #fecaca" }}>
+          <div className="rounded-xl p-3 mb-4 text-sm text-center" style={{ background: "rgba(239,68,68,0.1)", color: "var(--color-danger)", border: "1px solid rgba(239,68,68,0.3)" }}>
             {error}
           </div>
         )}

@@ -25,11 +25,113 @@ const ROLE_LABELS: Record<string, string> = {
 const TERRITORY_MANAGER_ROLES = ["ADMIN", "ANCIAO", "SERVO_DE_CAMPO"];
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  PENDING: { label: "Aguardando aprovação", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
-  ACTIVE: { label: "Ativa", color: "text-green-700 bg-green-50 border-green-200" },
-  BLOCKED: { label: "Bloqueada", color: "text-red-700 bg-red-50 border-red-200" },
-  REJECTED: { label: "Recusada", color: "text-gray-600 bg-gray-100 border-gray-300" },
+  PENDING: { label: "Aguardando aprovação", color: "text-[#fbbf24] bg-[rgba(251,191,36,0.15)] border-[rgba(251,191,36,0.3)]" },
+  ACTIVE: { label: "Ativa", color: "text-[#4ade80] bg-[rgba(34,197,94,0.15)] border-[rgba(34,197,94,0.3)]" },
+  BLOCKED: { label: "Bloqueada", color: "text-[#f87171] bg-[rgba(239,68,68,0.15)] border-[rgba(239,68,68,0.3)]" },
+  REJECTED: { label: "Recusada", color: "text-[#94a3b8] bg-[rgba(255,255,255,0.06)] border-[rgba(255,255,255,0.12)]" },
 };
+
+// Roles que ANCIAO pode atribuir (não pode promover a ANCIAO)
+const EDITABLE_ROLES_ANCIAO: CongregationMember["role"][] = ["PUBLICADOR", "SERVO_DE_CAMPO"];
+// ADMIN pode atribuir qualquer role
+const EDITABLE_ROLES_ADMIN: CongregationMember["role"][] = ["PUBLICADOR", "SERVO_DE_CAMPO", "ANCIAO"];
+
+function EditMemberModal({
+  member,
+  currentRole,
+  congregationId,
+  onClose,
+  onSaved,
+}: {
+  member: CongregationMember;
+  currentRole: string;
+  congregationId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState(member.name ?? "");
+  const [role, setRole] = useState<CongregationMember["role"]>(member.role);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const allowedRoles = currentRole === "ADMIN" ? EDITABLE_ROLES_ADMIN : EDITABLE_ROLES_ANCIAO;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      await congregationsApi.updateMember(congregationId, {
+        userId: member.id,
+        name: name.trim() || undefined,
+        role: role !== member.role ? role : undefined,
+      });
+      onSaved();
+    } catch {
+      setError("Erro ao salvar alterações.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.45)" }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="card w-full max-w-sm flex flex-col">
+        <h2 className="text-lg font-semibold text-[var(--color-text)] mb-1">Editar Membro</h2>
+        <p className="text-sm text-[var(--color-text-light)] mb-4 truncate">{member.email}</p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div>
+            <label htmlFor="edit-member-name" className="input-label">Nome</label>
+            <input
+              id="edit-member-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="input mt-1"
+              placeholder="Nome do membro"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="edit-member-role" className="input-label">Função</label>
+            <select
+              id="edit-member-role"
+              value={role}
+              onChange={(e) => setRole(e.target.value as CongregationMember["role"])}
+              className="input mt-1"
+            >
+              {allowedRoles.map((r) => (
+                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+              ))}
+              {/* Se role atual não está nas opções (ex: ANCIAO vendo outro ANCIAO via ADMIN) */}
+              {!allowedRoles.includes(member.role) && (
+                <option value={member.role}>{ROLE_LABELS[member.role]}</option>
+              )}
+            </select>
+          </div>
+
+          {error && (
+            <p className="text-sm text-[var(--color-danger)] text-center">{error}</p>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="btn-secondary flex-1" disabled={saving}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn-primary flex-1" disabled={saving}>
+              {saving ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function MemberCard({
   member,
@@ -46,7 +148,9 @@ function MemberCard({
   const canShowActions =
     currentRole === "ADMIN" ||
     (currentRole === "ANCIAO" && member.role !== "ANCIAO");
+  const canEdit = currentRole === "ADMIN" || currentRole === "ANCIAO";
   const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const toggleBlock = async () => {
     setLoading(true);
@@ -73,54 +177,89 @@ function MemberCard({
   };
 
   return (
-    <div
-      className="card py-3 px-4"
-      style={{
-        borderColor: member.isBlocked ? "var(--color-danger)" : "var(--color-border)",
-        opacity: member.isBlocked ? 0.75 : 1,
-      }}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-[var(--color-text)] truncate">{member.email}</p>
-          <p className="text-xs text-[var(--color-text-light)] mt-0.5">
-            {ROLE_LABELS[member.role]} · {member._count.revisits} revisitas
-            {member.isBlocked && (
-              <span className="ml-2 font-semibold text-red-600">BLOQUEADO</span>
+    <>
+      <div
+        className="card py-3 px-4"
+        style={{
+          borderColor: member.isBlocked ? "var(--color-danger)" : "var(--color-border)",
+          opacity: member.isBlocked ? 0.75 : 1,
+        }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-[var(--color-text)] truncate">
+              {member.name || member.email}
+            </p>
+            {member.name && (
+              <p className="text-xs text-[var(--color-text-light)] truncate">{member.email}</p>
             )}
-          </p>
-        </div>
-        {canShowActions && (
-          <div className="flex gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={toggleBlock}
-              disabled={loading}
-              className="btn-secondary text-xs py-1 px-2"
-              style={
-                member.isBlocked
-                  ? { color: "var(--color-success, #16a34a)" }
-                  : { color: "var(--color-warning, #b45309)" }
-              }
-            >
-              {member.isBlocked ? "Desbloquear" : "Bloquear"}
-            </button>
-            <button
-              type="button"
-              onClick={remove}
-              disabled={loading}
-              className="btn-secondary text-xs py-1 px-2"
-              style={{ color: "var(--color-danger)" }}
-              aria-label="Remover membro"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
-                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-              </svg>
-            </button>
+            <p className="text-xs text-[var(--color-text-light)] mt-0.5">
+              {ROLE_LABELS[member.role]} · {member._count.revisits} revisitas
+              {member.isBlocked && (
+                <span className="ml-2 font-semibold text-[#f87171]">BLOQUEADO</span>
+              )}
+            </p>
           </div>
-        )}
+          <div className="flex gap-1.5 shrink-0">
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                disabled={loading}
+                className="btn-secondary text-xs py-1 px-2"
+                aria-label="Editar membro"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </button>
+            )}
+            {canShowActions && (
+              <>
+                <button
+                  type="button"
+                  onClick={toggleBlock}
+                  disabled={loading}
+                  className="btn-secondary text-xs py-1 px-2"
+                  style={
+                    member.isBlocked
+                      ? { color: "var(--color-success, #16a34a)" }
+                      : { color: "var(--color-warning, #b45309)" }
+                  }
+                >
+                  {member.isBlocked ? "Desbloquear" : "Bloquear"}
+                </button>
+                <button
+                  type="button"
+                  onClick={remove}
+                  disabled={loading}
+                  className="btn-secondary text-xs py-1 px-2"
+                  style={{ color: "var(--color-danger)" }}
+                  aria-label="Remover membro"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                  </svg>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+      {editing && (
+        <EditMemberModal
+          member={member}
+          currentRole={currentRole}
+          congregationId={congregationId}
+          onClose={() => setEditing(false)}
+          onSaved={() => {
+            setEditing(false);
+            onUpdate();
+          }}
+        />
+      )}
+    </>
   );
 }
 
@@ -619,9 +758,9 @@ function CongregationContent() {
                 {congregation._count && <span>{congregation._count.members} membro(s)</span>}
               </div>
               {congregation.status === "REJECTED" && congregation.rejectionReason && (
-                <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200">
-                  <p className="text-xs font-semibold text-red-700 mb-1">Motivo da recusa:</p>
-                  <p className="text-sm text-red-700">{congregation.rejectionReason}</p>
+                <div className="mt-3 p-3 rounded-xl" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}>
+                  <p className="text-xs font-semibold text-[#f87171] mb-1">Motivo da recusa:</p>
+                  <p className="text-sm text-[#fca5a5]">{congregation.rejectionReason}</p>
                 </div>
               )}
               {congregation.status === "REJECTED" && (

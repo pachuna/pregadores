@@ -37,6 +37,7 @@ export async function GET(request: NextRequest, { params }: Params) {
         select: {
           id: true,
           email: true,
+          name: true,
           role: true,
           isBlocked: true,
           lastSeenAt: true,

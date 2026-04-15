@@ -15,10 +15,10 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import { useIBGEStates, useIBGECities } from "@/lib/ibge";
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  ACTIVE: "bg-green-100 text-green-700 border-green-200",
-  BLOCKED: "bg-red-100 text-red-700 border-red-200",
-  REJECTED: "bg-gray-100 text-gray-600 border-gray-300",
+  PENDING: "bg-[rgba(251,191,36,0.15)] text-[#fbbf24] border-[rgba(251,191,36,0.3)]",
+  ACTIVE: "bg-[rgba(34,197,94,0.15)] text-[#4ade80] border-[rgba(34,197,94,0.3)]",
+  BLOCKED: "bg-[rgba(239,68,68,0.15)] text-[#f87171] border-[rgba(239,68,68,0.3)]",
+  REJECTED: "bg-[rgba(255,255,255,0.06)] text-[#94a3b8] border-[rgba(255,255,255,0.12)]",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -108,7 +108,7 @@ function MembersSection({
           className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border"
           style={{
             borderColor: m.isBlocked ? "var(--color-danger)" : "var(--color-border)",
-            background: "var(--color-surface-alt, #f8f9fb)",
+            background: "var(--color-surface-card)",
             opacity: m.isBlocked ? 0.75 : 1,
           }}
         >
@@ -707,8 +707,8 @@ function DeleteCongregationModal({ congregation, onClose, onDeleted }: DeleteCon
       <div className="card w-full max-w-md flex flex-col gap-4">
         {/* Ícone de alerta */}
         <div className="flex flex-col items-center text-center gap-2">
-          <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7 text-red-600" aria-hidden="true">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "rgba(239,68,68,0.15)" }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" className="w-7 h-7" aria-hidden="true">
               <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
               <line x1="12" y1="9" x2="12" y2="13" />
               <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -722,9 +722,9 @@ function DeleteCongregationModal({ congregation, onClose, onDeleted }: DeleteCon
         </div>
 
         {/* Aviso */}
-        <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex flex-col gap-1">
-          <p className="text-sm font-semibold text-red-700">Esta ação é irreversível.</p>
-          <ul className="list-disc list-inside text-xs text-red-600 mt-1 space-y-1">
+        <div className="rounded-xl p-3 flex flex-col gap-1" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}>
+          <p className="text-sm font-semibold text-[#f87171]">Esta ação é irreversível.</p>
+          <ul className="list-disc list-inside text-xs text-[#fca5a5] mt-1 space-y-1">
             <li>Todos os <b>territórios, ruas, casas e visitas</b> serão excluídos</li>
             <li>
               Os <b>{congregation._count?.members ?? 0} membro(s)</b> serão desvinculados da congregação
@@ -888,7 +888,7 @@ function AdminCongregationsContent() {
         {error && (
           <div
             className="rounded-xl p-3 mb-4 text-sm text-center"
-            style={{ background: "#fef2f2", color: "var(--color-danger)", border: "1px solid #fecaca" }}
+            style={{ background: "rgba(239,68,68,0.1)", color: "var(--color-danger)", border: "1px solid rgba(239,68,68,0.3)" }}
           >
             {error}
           </div>
@@ -954,7 +954,7 @@ function AdminCongregationsContent() {
                           {c.createdBy?.email ?? "—"}
                         </p>
                         {c.status === "REJECTED" && c.rejectionReason && (
-                          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2 py-1.5 mb-3">
+                          <p className="text-xs text-[#fca5a5] rounded-lg px-2 py-1.5 mb-3" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}>
                             <span className="font-semibold">Motivo da recusa:</span> {c.rejectionReason}
                           </p>
                         )}

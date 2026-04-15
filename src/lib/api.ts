@@ -180,6 +180,7 @@ export const adminApi = {
 export interface CongregationMember {
   id: string;
   email: string;
+  name: string | null;
   role: "ADMIN" | "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO";
   isBlocked: boolean;
   lastSeenAt: string | null;
@@ -324,7 +325,7 @@ export const congregationsApi = {
     api.post(`/api/congregations/${congregationId}/members`, { userId, role }),
   updateMember: (
     congregationId: string,
-    data: { userId: string; isBlocked?: boolean; role?: "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO" }
+    data: { userId: string; isBlocked?: boolean; role?: "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO"; name?: string }
   ) => api.patch(`/api/congregations/${congregationId}/members`, data),
   removeMember: (congregationId: string, userId: string) =>
     api.delete(`/api/congregations/${congregationId}/members`, { data: { userId } }),

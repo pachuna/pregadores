@@ -131,14 +131,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
   }
 
-  let body: { userId?: string; isBlocked?: boolean; role?: string };
+  let body: { userId?: string; isBlocked?: boolean; role?: string; name?: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Body inválido" }, { status: 400 });
   }
 
-  const { userId, isBlocked, role: newRole } = body;
+  const { userId, isBlocked, role: newRole, name } = body;
   if (!userId) {
     return NextResponse.json({ error: "userId é obrigatório" }, { status: 400 });
   }
@@ -159,8 +159,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     );
   }
 
-  const updateData: { isBlocked?: boolean; role?: "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO" } = {};
+  const updateData: { isBlocked?: boolean; role?: "ANCIAO" | "PUBLICADOR" | "SERVO_DE_CAMPO"; name?: string } = {};
   if (typeof isBlocked === "boolean") updateData.isBlocked = isBlocked;
+  if (typeof name === "string") updateData.name = name.trim();
   if (newRole === "ANCIAO") updateData.role = "ANCIAO";
   if (newRole === "PUBLICADOR") updateData.role = "PUBLICADOR";
   if (newRole === "SERVO_DE_CAMPO") updateData.role = "SERVO_DE_CAMPO";
@@ -182,7 +183,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const updated = await prisma.user.update({
     where: { id: userId },
     data: updateData,
-    select: { id: true, email: true, role: true, isBlocked: true },
+    select: { id: true, email: true, name: true, role: true, isBlocked: true },
   });
 
   return NextResponse.json(updated);
