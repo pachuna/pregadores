@@ -273,10 +273,12 @@ function MemberCard({
 function TerritoryCard({
   territory,
   canManage,
+  role,
   onDelete,
 }: {
   territory: TerritoryListItem;
   canManage?: boolean;
+  role?: string | null;
   onDelete?: () => void;
 }) {
   const [deleting, setDeleting] = useState(false);
@@ -284,12 +286,13 @@ function TerritoryCard({
   const [shareOpen, setShareOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [shareDone, setShareDone] = useState(false);
+  const [shareTarget, setShareTarget] = useState<"congregation" | "ALL">("congregation");
 
   async function doShare() {
     setShareOpen(false);
     setSharing(true);
     try {
-      await territoriesApi.share(territory.id);
+      await territoriesApi.share(territory.id, shareTarget);
       setShareDone(true);
       setTimeout(() => setShareDone(false), 3000);
 
@@ -482,7 +485,7 @@ function TerritoryCard({
                 Compartilhar território &ldquo;{territory.label ?? territory.number}&rdquo;?
               </p>
               <p className="text-xs text-[var(--color-text-light)]">
-                Uma notificação será enviada para todos os membros da congregação com o link para abrir este território.
+                Uma notificação será enviada com o link para abrir este território.
               </p>
               {territory.lastVisitAt && (
                 <p className="text-xs text-[var(--color-text-light)] mt-1">
@@ -490,6 +493,42 @@ function TerritoryCard({
                 </p>
               )}
             </div>
+
+            {/* Seletor de público — apenas ADMIN */}
+            {role === "ADMIN" && (
+              <div className="flex flex-col gap-1.5">
+                <p className="text-xs font-medium text-[var(--color-text-light)] uppercase tracking-wide">Enviar para</p>
+                {([
+                  { value: "congregation", label: "Congregação vinculada", desc: "Apenas membros desta congregação" },
+                  { value: "ALL",          label: "Todos os membros",      desc: "Todo o sistema" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setShareTarget(opt.value)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors"
+                    style={{
+                      background: shareTarget === opt.value ? "rgba(37,99,255,0.12)" : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${shareTarget === opt.value ? "rgba(37,99,255,0.4)" : "var(--color-border)"}`,
+                    }}
+                  >
+                    <div
+                      className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
+                      style={{ borderColor: shareTarget === opt.value ? "#2563ff" : "var(--color-border)" }}
+                    >
+                      {shareTarget === opt.value && (
+                        <div className="w-2 h-2 rounded-full" style={{ background: "#2563ff" }} />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-[var(--color-text)]">{opt.label}</p>
+                      <p className="text-xs text-[var(--color-text-light)]">{opt.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="flex gap-2">
               <button
                 type="button"
@@ -656,7 +695,7 @@ function TerritoriesTab({ congregationId, role }: { congregationId: string; role
       </div>
       <div className="grid grid-cols-2 gap-3">
         {territories.map((t) => (
-          <TerritoryCard key={t.id} territory={t} canManage={canManage} onDelete={load} />
+          <TerritoryCard key={t.id} territory={t} canManage={canManage} role={role} onDelete={load} />
         ))}
       </div>
       {showCreate && (
