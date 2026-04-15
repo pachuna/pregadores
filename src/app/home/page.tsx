@@ -48,13 +48,13 @@ interface StatCardProps {
 
 function StatCard({ label, value, color, pulse }: StatCardProps) {
   const cardClass = color
-    ? { blue: "bg-blue-50 border-blue-200", green: "bg-green-50 border-green-200", red: "bg-red-50 border-red-200" }[color]
-    : "bg-white/90 border-[var(--color-border)]";
+    ? { blue: "bg-[rgba(37,99,255,0.1)] border-[rgba(37,99,255,0.25)]", green: "bg-[rgba(34,197,94,0.1)] border-[rgba(34,197,94,0.25)]", red: "bg-[rgba(239,68,68,0.1)] border-[rgba(239,68,68,0.25)]" }[color]
+    : "bg-[var(--color-surface-card)] border-[var(--color-border)]";
   const valueClass = color
-    ? { blue: "text-blue-700", green: "text-green-700", red: "text-red-500" }[color]
-    : "text-[var(--color-primary-dark)]";
+    ? { blue: "text-[#60a5fa]", green: "text-[#4ade80]", red: "text-[#f87171]" }[color]
+    : "text-[var(--color-text)]";
   const labelClass = color
-    ? { blue: "text-blue-600", green: "text-green-700", red: "text-red-600" }[color]
+    ? { blue: "text-[#60a5fa]", green: "text-[#4ade80]", red: "text-[#f87171]" }[color]
     : "text-[var(--color-text-light)]";
 
   return (
@@ -90,7 +90,7 @@ function QuickAction({ label, icon, accent, onClick }: QuickActionProps) {
       className={`rounded-2xl border px-4 py-4 flex flex-col items-start gap-2 transition-all active:scale-[0.97] shadow-sm ${
         accent
           ? "bg-[var(--color-accent)] border-[var(--color-accent)] text-white"
-          : "bg-white/90 border-white/40 text-[var(--color-primary-dark)]"
+          : "bg-[var(--color-surface-card)] border-[var(--color-border)] text-[var(--color-text)]"
       }`}
     >
       <div
@@ -106,7 +106,7 @@ function QuickAction({ label, icon, accent, onClick }: QuickActionProps) {
 }
 
 function QuickActionIcon({ icon, accent }: { icon: QuickActionIcon; accent?: boolean }) {
-  const cls = `w-5 h-5 ${accent ? "text-white" : "text-[var(--color-primary)]"}`;
+  const cls = `w-5 h-5 ${accent ? "text-white" : "text-[var(--color-accent)]"}`;
   if (icon === "plus") {
     return (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={cls} aria-hidden="true">
@@ -320,7 +320,7 @@ function HomeContent() {
           </div>
 
           {nearestRevisits.length === 0 ? (
-            <div className="rounded-xl bg-white/10 border border-white/20 px-4 py-6 text-center">
+            <div className="rounded-xl bg-[var(--color-surface-card)] border border-[var(--color-border)] px-4 py-6 text-center">
               <p className="text-sm text-white/70">Nenhuma revisita cadastrada ainda.</p>
               <button
                 type="button"
@@ -335,7 +335,7 @@ function HomeContent() {
               {nearestRevisits.map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-xl bg-white/95 border border-white/30 px-3 py-2.5 shadow-sm cursor-pointer transition-all hover:bg-white active:scale-[0.98]"
+                  className="rounded-xl bg-[var(--color-surface-card)] border border-[var(--color-border)] px-3 py-2.5 shadow-sm cursor-pointer transition-all hover:bg-[var(--color-surface-elevated)] active:scale-[0.98]"
                   onClick={() => setSelectedRevisit(item)}
                   role="button"
                   tabIndex={0}
@@ -349,14 +349,14 @@ function HomeContent() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <h3 className="font-semibold text-sm text-[var(--color-primary-dark)] truncate">
+                        <h3 className="font-semibold text-sm text-[var(--color-text)] truncate">
                           {item.name}
                         </h3>
                         <span
                           className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
                             item.isActive
-                              ? "bg-green-100 text-green-700"
-                              : "bg-slate-100 text-slate-500"
+                              ? "bg-[rgba(34,197,94,0.15)] text-[#4ade80]"
+                              : "bg-[rgba(255,255,255,0.06)] text-[var(--color-text-light)]"
                           }`}
                         >
                           {item.isActive ? "Ativa" : "Inativa"}

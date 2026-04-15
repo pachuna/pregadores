@@ -148,13 +148,13 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
         aria-modal="true"
         role="dialog"
       >
-        <section className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-strong)] p-4 max-h-[88vh] overflow-auto">
+        <section className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-strong)] p-4 max-h-[88vh] overflow-auto">
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="min-w-0">
               <p className="text-[11px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-light)]">
                 Editar revisita
               </p>
-              <h2 className="text-xl font-bold text-[var(--color-primary-dark)] truncate mt-1">
+              <h2 className="text-xl font-bold text-[var(--color-text)] truncate mt-1">
                 {revisit.name}
               </h2>
             </div>
@@ -196,8 +196,8 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
                   type="button"
                   className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
                     editIsActive
-                      ? "border-green-600 bg-green-100 text-green-800"
-                      : "border-[var(--color-border)] bg-white text-[var(--color-text-light)]"
+                      ? "border-green-600 bg-[rgba(34,197,94,0.15)] text-[#4ade80]"
+                      : "border-[var(--color-border)] bg-[var(--color-surface-card)] text-[var(--color-text-light)]"
                   }`}
                   onClick={() => setEditIsActive(true)}
                 >
@@ -207,8 +207,8 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
                   type="button"
                   className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
                     !editIsActive
-                      ? "border-slate-500 bg-slate-200 text-slate-700"
-                      : "border-[var(--color-border)] bg-white text-[var(--color-text-light)]"
+                      ? "border-slate-500 bg-[rgba(255,255,255,0.08)] text-[var(--color-text)]"
+                      : "border-[var(--color-border)] bg-[var(--color-surface-card)] text-[var(--color-text-light)]"
                   }`}
                   onClick={() => setEditIsActive(false)}
                 >
@@ -259,9 +259,9 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
                   {parseVisitHistory(savedRevisit).map((item, index) => (
                     <div
                       key={`${item.date}-${index}`}
-                      className="rounded-lg border border-[var(--color-border)] bg-white px-3 py-2"
+                      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-card)] px-3 py-2"
                     >
-                      <p className="text-xs font-semibold text-[var(--color-primary-dark)]">
+                      <p className="text-xs font-semibold text-[var(--color-accent)]">
                         {new Date(`${item.date}T00:00:00`).toLocaleDateString("pt-BR")}
                       </p>
                       <p className="text-xs text-[var(--color-text)] mt-1">{item.summary}</p>
@@ -286,7 +286,7 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
 
             <button
               type="button"
-              className="w-full rounded-[10px] border border-[var(--color-primary)] bg-white px-4 py-3 text-sm font-semibold text-[var(--color-primary-dark)]"
+              className="w-full rounded-[10px] border border-[var(--color-primary)] bg-[var(--color-primary-soft)] px-4 py-3 text-sm font-semibold text-[var(--color-text)]"
               onClick={handleQuickRegisterToday}
               disabled={isSaving}
             >
@@ -295,7 +295,7 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
 
             <button
               type="button"
-              className="w-full rounded-[10px] border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-100 transition-colors"
+              className="w-full rounded-[10px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.1)] px-4 py-3 text-sm font-semibold text-[#f87171] hover:bg-[rgba(239,68,68,0.2)] transition-colors"
               onClick={() => setShowDeleteConfirm(true)}
               disabled={isSaving || isDeleting}
             >
@@ -308,7 +308,7 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
       {/* Close confirm overlay */}
       {showCloseConfirm && (
         <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[2px] flex items-center justify-center p-4 modal-fade-in">
-          <section className="w-full max-w-sm rounded-2xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-strong)] p-4 modal-pop-in">
+          <section className="w-full max-w-sm rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-strong)] p-4 modal-pop-in">
             <div className="mb-3 inline-flex items-center justify-center w-10 h-10 rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]">
               <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M12 8V12" />
@@ -319,7 +319,7 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
             <p className="text-[11px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-light)]">
               Confirmar fechamento
             </p>
-            <h3 className="text-lg font-bold text-[var(--color-primary-dark)] mt-1">
+            <h3 className="text-lg font-bold text-[var(--color-text)] mt-1">
               Há alterações não salvas
             </h3>
             <p className="text-sm text-[var(--color-text)] mt-2">
@@ -339,7 +339,7 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
               </button>
               <button
                 type="button"
-                className="w-full rounded-[10px] border border-[var(--color-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--color-text)]"
+                className="w-full rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface-card)] px-4 py-3 text-sm font-semibold text-[var(--color-text)]"
                 onClick={() => { setShowCloseConfirm(false); onClose(); }}
                 disabled={isSaving}
               >
@@ -347,7 +347,7 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
               </button>
               <button
                 type="button"
-                className="w-full rounded-[10px] border border-[var(--color-primary)] bg-[var(--color-primary-soft)] px-4 py-3 text-sm font-semibold text-[var(--color-primary-dark)]"
+                className="w-full rounded-[10px] border border-[var(--color-primary)] bg-[var(--color-primary-soft)] px-4 py-3 text-sm font-semibold text-[var(--color-text)]"
                 onClick={() => setShowCloseConfirm(false)}
                 disabled={isSaving}
               >
@@ -361,8 +361,8 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
       {/* Delete confirm overlay */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[2px] flex items-center justify-center p-4 modal-fade-in">
-          <section className="w-full max-w-sm rounded-2xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-strong)] p-4 modal-pop-in">
-            <div className="mb-3 inline-flex items-center justify-center w-10 h-10 rounded-full bg-red-100 text-red-600">
+          <section className="w-full max-w-sm rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-strong)] p-4 modal-pop-in">
+            <div className="mb-3 inline-flex items-center justify-center w-10 h-10 rounded-full bg-[rgba(239,68,68,0.15)] text-[#f87171]">
               <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -374,7 +374,7 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
             <p className="text-[11px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-light)]">
               Confirmar exclusão
             </p>
-            <h3 className="text-lg font-bold text-[var(--color-primary-dark)] mt-1">
+            <h3 className="text-lg font-bold text-[var(--color-text)] mt-1">
               Apagar revisita
             </h3>
             <p className="text-sm text-[var(--color-text)] mt-2">
@@ -391,7 +391,7 @@ export default function RevisitEditModal({ revisit, onClose, onUpdate, onDelete 
               </button>
               <button
                 type="button"
-                className="w-full rounded-[10px] border border-[var(--color-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--color-text)]"
+                className="w-full rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface-card)] px-4 py-3 text-sm font-semibold text-[var(--color-text)]"
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={isDeleting}
               >
