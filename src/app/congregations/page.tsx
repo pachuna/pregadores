@@ -273,14 +273,13 @@ function MemberCard({
 function TerritoryCard({
   territory,
   canManage,
-  role,
   onDelete,
 }: {
   territory: TerritoryListItem;
   canManage?: boolean;
-  role?: string | null;
   onDelete?: () => void;
 }) {
+  const role = useAuthStore((s) => s.role);
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -695,7 +694,7 @@ function TerritoriesTab({ congregationId, role }: { congregationId: string; role
       </div>
       <div className="grid grid-cols-2 gap-3">
         {territories.map((t) => (
-          <TerritoryCard key={t.id} territory={t} canManage={canManage} role={role} onDelete={load} />
+          <TerritoryCard key={t.id} territory={t} canManage={canManage} onDelete={load} />
         ))}
       </div>
       {showCreate && (
