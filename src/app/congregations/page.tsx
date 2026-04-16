@@ -18,6 +18,7 @@ import {
   type CongregationJoinRequest,
 } from "@/lib/api";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import ConfirmModal from "@/components/ConfirmModal";
 
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Administrador",
@@ -159,6 +160,7 @@ function MemberCard({
     (currentRole === "ADMIN" || currentRole === "ANCIAO") && member.role !== "ADMIN";
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   const toggleBlock = async () => {
     setLoading(true);
@@ -173,8 +175,10 @@ function MemberCard({
     }
   };
 
-  const remove = async () => {
-    if (!confirm(`Remover ${member.email} da congregação?`)) return;
+  const remove = () => setConfirmRemove(true);
+
+  const doRemove = async () => {
+    setConfirmRemove(false);
     setLoading(true);
     try {
       await congregationsApi.removeMember(congregationId, member.id);
@@ -277,6 +281,16 @@ function MemberCard({
             setEditing(false);
             onUpdate();
           }}
+        />
+      )}
+      {confirmRemove && (
+        <ConfirmModal
+          title="Remover membro"
+          message={`Remover ${member.name || member.email} da congregação? Esta ação não pode ser desfeita.`}
+          confirmLabel="Remover"
+          danger
+          onConfirm={doRemove}
+          onCancel={() => setConfirmRemove(false)}
         />
       )}
     </>

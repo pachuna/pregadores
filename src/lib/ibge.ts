@@ -16,21 +16,27 @@ export interface IBGECity {
 export function useIBGEStates() {
   const [states, setStates] = useState<IBGEState[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome")
-      .then((r) => r.json())
+    setError(false);
+    fetch("/api/ibge/states")
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
       .then((data: IBGEState[]) => setStates(data))
-      .catch(() => {})
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
-  return { states, loading };
+  return { states, loading, error };
 }
 
 export function useIBGECities(uf: string) {
   const [cities, setCities] = useState<IBGECity[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!uf) {
@@ -38,14 +44,16 @@ export function useIBGECities(uf: string) {
       return;
     }
     setLoading(true);
-    fetch(
-      `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`
-    )
-      .then((r) => r.json())
+    setError(false);
+    fetch(`/api/ibge/cities/${encodeURIComponent(uf)}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
       .then((data: IBGECity[]) => setCities(data))
-      .catch(() => {})
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [uf]);
 
-  return { cities, loading };
+  return { cities, loading, error };
 }

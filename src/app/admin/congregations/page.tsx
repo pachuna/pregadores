@@ -14,6 +14,7 @@ import { useAuthStore } from "@/store/authStore";
 import AuthGuard from "@/components/AuthGuard";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { useIBGEStates, useIBGECities } from "@/lib/ibge";
+import ConfirmModal from "@/components/ConfirmModal";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-[rgba(251,191,36,0.15)] text-[#fbbf24] border-[rgba(251,191,36,0.3)]",
@@ -46,6 +47,7 @@ function MembersSection({
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [memberToRemove, setMemberToRemove] = useState<CongregationMember | null>(null);
 
   const loadMembers = useCallback(async () => {
     setLoading(true);
@@ -64,8 +66,12 @@ function MembersSection({
     loadMembers();
   }, [loadMembers]);
 
-  const removeMember = async (member: CongregationMember) => {
-    if (!confirm(`Remover ${member.email} da congregação?`)) return;
+  const removeMember = (member: CongregationMember) => setMemberToRemove(member);
+
+  const confirmRemoveMember = async () => {
+    if (!memberToRemove) return;
+    const member = memberToRemove;
+    setMemberToRemove(null);
     setRemoving(member.id);
     try {
       await congregationsApi.removeMember(congregationId, member.id);
@@ -102,7 +108,18 @@ function MembersSection({
   }
 
   return (
-    <div className="flex flex-col gap-2 mt-1">
+    <>
+      {memberToRemove && (
+        <ConfirmModal
+          title="Remover membro"
+          message={`Remover ${memberToRemove.email} da congregação? Esta ação não pode ser desfeita.`}
+          confirmLabel="Remover"
+          danger
+          onConfirm={confirmRemoveMember}
+          onCancel={() => setMemberToRemove(null)}
+        />
+      )}
+      <div className="flex flex-col gap-2 mt-1">
       {members.map((m) => (
         <div
           key={m.id}
@@ -139,6 +156,7 @@ function MembersSection({
         </div>
       ))}
     </div>
+    </>
   );
 }
 

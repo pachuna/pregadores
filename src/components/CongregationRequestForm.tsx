@@ -17,8 +17,8 @@ export default function CongregationRequestForm({ onSuccess, onCancel }: Props) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { states, loading: loadingStates } = useIBGEStates();
-  const { cities, loading: loadingCities } = useIBGECities(state);
+  const { states, loading: loadingStates, error: errorStates } = useIBGEStates();
+  const { cities, loading: loadingCities, error: errorCities } = useIBGECities(state);
 
   const handleStateChange = (value: string) => {
     setState(value);
@@ -90,15 +90,25 @@ export default function CongregationRequestForm({ onSuccess, onCancel }: Props) 
           onChange={(e) => handleStateChange(e.target.value)}
           className="input mt-1"
           required
-          disabled={loadingStates}
+          disabled={loadingStates || errorStates}
         >
-          <option value="">{loadingStates ? "Carregando estados..." : "Selecione o estado"}</option>
+          <option value="">
+            {loadingStates ? "Carregando estados..." : errorStates ? "Erro ao carregar estados" : "Selecione o estado"}
+          </option>
           {states.map((s) => (
             <option key={s.sigla} value={s.sigla}>
               {s.nome} ({s.sigla})
             </option>
           ))}
         </select>
+        {errorStates && (
+          <p className="text-xs text-[var(--color-danger)] mt-1">
+            Não foi possível carregar os estados.{" "}
+            <button type="button" className="underline" onClick={() => window.location.reload()}>
+              Tentar novamente
+            </button>
+          </p>
+        )}
       </div>
 
       <div>
@@ -118,6 +128,8 @@ export default function CongregationRequestForm({ onSuccess, onCancel }: Props) 
               ? "Selecione o estado primeiro"
               : loadingCities
               ? "Carregando cidades..."
+              : errorCities
+              ? "Erro ao carregar cidades"
               : "Selecione a cidade"}
           </option>
           {cities.map((c) => (
