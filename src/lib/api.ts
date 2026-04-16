@@ -11,6 +11,10 @@ function isRefreshEndpoint(url?: string) {
   return (url || "").includes("/api/auth/refresh");
 }
 
+function isAuthEndpoint(url?: string) {
+  return (url || "").includes("/api/auth/");
+}
+
 function redirectToLogin(reason: "session-expired" | "unauthorized") {
   if (typeof window === "undefined") {
     return;
@@ -45,7 +49,8 @@ api.interceptors.response.use(
       status !== 401 ||
       !originalRequest ||
       originalRequest._retry ||
-      isRefreshEndpoint(requestUrl)
+      isRefreshEndpoint(requestUrl) ||
+      isAuthEndpoint(requestUrl)
     ) {
       return Promise.reject(error);
     }

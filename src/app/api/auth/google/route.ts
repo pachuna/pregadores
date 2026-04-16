@@ -77,6 +77,10 @@ export async function POST(request: NextRequest) {
     );
 
     if (!tokenInfoResponse.ok) {
+      console.error("Google tokeninfo rejeitou o token", {
+        status: tokenInfoResponse.status,
+        data: tokenInfoResponse.data,
+      });
       return NextResponse.json(
         { error: "Token Google invÃ¡lido" },
         { status: 401 },
@@ -90,7 +94,9 @@ export async function POST(request: NextRequest) {
     if (!tokenInfo.aud || !allowedClientIds.includes(tokenInfo.aud) || !emailVerified) {
       console.error("Google token recusado", {
         aud: tokenInfo.aud,
+        allowedClientIds,
         emailVerified: tokenInfo.email_verified,
+        email: tokenInfo.email,
       });
       return NextResponse.json(
         { error: "Token Google invÃ¡lido" },

@@ -1,4 +1,5 @@
-const CACHE_NAME = "pregadores-v4";
+const WEEK_NUMBER = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
+const CACHE_NAME = `pregadores-v4-w${WEEK_NUMBER}`;
 const STATIC_ASSETS = ["/", "/login", "/manifest.json", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"];
 
 self.addEventListener("install", (event) => {
