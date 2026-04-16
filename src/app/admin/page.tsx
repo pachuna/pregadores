@@ -596,7 +596,8 @@ function AdminContent() {
               </div>
             )}
 
-            {!loading && users.length > 0 && (
+            {/* Input de busca: sempre visível (evita perda de foco durante loading) */}
+            {(users.length > 0 || searchQuery) && (
               <div className="relative mb-4">
                 <svg
                   viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -609,7 +610,8 @@ function AdminContent() {
                 </svg>
                 <input
                   type="search"
-                  className="input pl-9"
+                  className="input"
+                  style={{ paddingLeft: "2.25rem" }}
                   placeholder="Buscar por nome ou email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
